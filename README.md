@@ -11,6 +11,16 @@ This project uses [Deno 2.0](https://docs.deno.com) and [just](https://github.co
 - [Deno 2.0](https://docs.deno.com)
 - [just](https://github.com/casey/just)
 
+### First-time Setup
+
+After cloning the repository, run:
+
+```bash
+just post-clone
+```
+
+This will set up the required git hooks to ensure consistent code quality.
+
 ### Available Commands
 
 ```bash
@@ -34,6 +44,9 @@ just test
 
 # Check types
 just check-types
+
+# Set up git hooks (runs automatically from post-clone)
+just setup-hooks
 ```
 
 ### Developer Experience
