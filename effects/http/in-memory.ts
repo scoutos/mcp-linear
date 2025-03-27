@@ -7,8 +7,11 @@ export type InMemoryHTTPOptions = {
   /**
    * Mock responses by URL pattern
    */
-  responses?: Map<string, (url: string, options?: RequestInit) => Promise<Response>>;
-  
+  responses?: Map<
+    string,
+    (url: string, options?: RequestInit) => Promise<Response>
+  >;
+
   /**
    * Default response handler for URLs not in the responses map
    */
@@ -18,15 +21,20 @@ export type InMemoryHTTPOptions = {
 /**
  * Create an in-memory HTTP effect for testing
  */
-export function createInMemoryHTTP(options: InMemoryHTTPOptions = {}): HTTPEffect {
-  const { 
-    responses = new Map(), 
-    defaultHandler = () => Promise.resolve(new Response(JSON.stringify({ error: "Not implemented" }), { 
-      status: 501,
-      headers: { "Content-Type": "application/json" },
-    })),
+export function createInMemoryHTTP(
+  options: InMemoryHTTPOptions = {},
+): HTTPEffect {
+  const {
+    responses = new Map(),
+    defaultHandler = () =>
+      Promise.resolve(
+        new Response(JSON.stringify({ error: "Not implemented" }), {
+          status: 501,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
   } = options;
-  
+
   return {
     async fetch(url, options) {
       // Find a matching handler
@@ -35,7 +43,7 @@ export function createInMemoryHTTP(options: InMemoryHTTPOptions = {}): HTTPEffec
           return await handler(url, options);
         }
       }
-      
+
       // Use default handler if no match
       return await defaultHandler(url, options);
     },

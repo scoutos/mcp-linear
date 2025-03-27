@@ -8,20 +8,24 @@ import { MCPResponse } from "../types/mcp.ts";
  */
 export function formatMCPResponse(response: MCPResponse): Response {
   const status = response.error ? 400 : 200;
-  
+
   return new Response(
     JSON.stringify(response.data),
     {
       status,
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 }
 
 /**
  * Create an error response
  */
-export function createErrorResponse(message: string, code = "INTERNAL_ERROR", status = 500): Response {
+export function createErrorResponse(
+  message: string,
+  code = "INTERNAL_ERROR",
+  status = 500,
+): Response {
   return new Response(
     JSON.stringify({
       error: {
@@ -32,6 +36,6 @@ export function createErrorResponse(message: string, code = "INTERNAL_ERROR", st
     {
       status,
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 }

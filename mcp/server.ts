@@ -14,7 +14,7 @@ export function createServer() {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
-    
+
     // Root MCP endpoint
     if (path === "/mcp") {
       return new Response(
@@ -25,10 +25,10 @@ export function createServer() {
         }),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // List available tools
     if (path === "/mcp/tools") {
       const tools: MCPTool[] = [
@@ -61,32 +61,32 @@ export function createServer() {
           ],
         },
       ];
-      
+
       const response: MCPToolsResponse = { tools };
-      
+
       return new Response(
         JSON.stringify(response),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // Search Linear issues
     if (path === "/mcp/tools/linear-search" && method === "POST") {
-      let body;
+      let _body;
       try {
-        body = await request.json();
-      } catch (e) {
+        _body = await request.json();
+      } catch (_e) {
         return new Response(
           JSON.stringify({ error: "Invalid JSON body" }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
-      
+
       // Return mock search results for now
       return new Response(
         JSON.stringify({
@@ -101,14 +101,16 @@ export function createServer() {
         }),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // Get issue details
-    if (path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+$/) && method === "GET") {
+    if (
+      path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+$/) && method === "GET"
+    ) {
       const issueId = path.split("/").pop();
-      
+
       // Return mock issue details
       return new Response(
         JSON.stringify({
@@ -128,25 +130,27 @@ export function createServer() {
         }),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // Update issue
-    if (path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+$/) && method === "PUT") {
+    if (
+      path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+$/) && method === "PUT"
+    ) {
       let body;
       try {
         body = await request.json();
-      } catch (e) {
+      } catch (_e) {
         return new Response(
           JSON.stringify({ error: "Invalid JSON body" }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
-      
+
       // Return success response
       return new Response(
         JSON.stringify({
@@ -158,25 +162,28 @@ export function createServer() {
         }),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // Add comment to issue
-    if (path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+\/comment$/) && method === "POST") {
+    if (
+      path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+\/comment$/) &&
+      method === "POST"
+    ) {
       let body;
       try {
         body = await request.json();
-      } catch (e) {
+      } catch (_e) {
         return new Response(
           JSON.stringify({ error: "Invalid JSON body" }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
-      
+
       // Return success response with mock comment
       return new Response(
         JSON.stringify({
@@ -189,17 +196,17 @@ export function createServer() {
         }),
         {
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
-    
+
     // Not found
     return new Response(
       JSON.stringify({ error: "Not found" }),
       {
         status: 404,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   };
 }

@@ -22,6 +22,8 @@ export type MCPResponse = {
   };
 };
 
+export type MCPResponsePromise = MCPResponse | Promise<MCPResponse>;
+
 /**
  * MCP tool definition
  */

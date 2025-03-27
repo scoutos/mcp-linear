@@ -1,23 +1,22 @@
 /**
  * MCP request handlers
  */
-import { MCPRequest, MCPResponse } from "../types/mcp.ts";
-import { Issue, SearchResults } from "../types/linear.ts";
+import { MCPRequest, MCPResponsePromise } from "../types/mcp.ts";
+import { Issue } from "../types/linear.ts";
 
 /**
  * Handler dependencies
  */
-export type HandlerDependencies = {
-  // Dependencies will be added as we implement actions
-};
+export type HandlerDependencies = Record<string, never>;
 
 /**
  * Handler for the search issues endpoint
  */
 export function createSearchIssuesHandler(_deps: HandlerDependencies) {
-  return async (request: MCPRequest): Promise<MCPResponse> => {
-    const { query } = request.params as { query: string };
-    
+  return (request: MCPRequest): MCPResponsePromise => {
+    // Parameter is unused since this is a mock implementation
+    const _params = request.params;
+
     // Mock implementation for now
     const results: Issue[] = [
       {
@@ -27,7 +26,7 @@ export function createSearchIssuesHandler(_deps: HandlerDependencies) {
         status: "In Progress",
       },
     ];
-    
+
     return {
       id: request.id,
       data: { results },
@@ -39,9 +38,9 @@ export function createSearchIssuesHandler(_deps: HandlerDependencies) {
  * Handler for the get issue endpoint
  */
 export function createGetIssueHandler(_deps: HandlerDependencies) {
-  return async (request: MCPRequest): Promise<MCPResponse> => {
+  return (request: MCPRequest): MCPResponsePromise => {
     const { id } = request.params as { id: string };
-    
+
     // Mock implementation for now
     const issue: Issue = {
       id,
@@ -56,7 +55,7 @@ export function createGetIssueHandler(_deps: HandlerDependencies) {
         },
       ],
     };
-    
+
     return {
       id: request.id,
       data: { issue },
@@ -68,17 +67,17 @@ export function createGetIssueHandler(_deps: HandlerDependencies) {
  * Handler for the update issue endpoint
  */
 export function createUpdateIssueHandler(_deps: HandlerDependencies) {
-  return async (request: MCPRequest): Promise<MCPResponse> => {
+  return (request: MCPRequest): MCPResponsePromise => {
     const { id } = request.params as { id: string };
     const updateData = { ...request.params };
     delete updateData.id;
-    
+
     // Mock implementation for now
     const issue: Issue = {
       id,
       ...(updateData as Partial<Issue>),
     };
-    
+
     return {
       id: request.id,
       data: {
@@ -93,17 +92,17 @@ export function createUpdateIssueHandler(_deps: HandlerDependencies) {
  * Handler for the add comment endpoint
  */
 export function createAddCommentHandler(_deps: HandlerDependencies) {
-  return async (request: MCPRequest): Promise<MCPResponse> => {
-    const { id } = request.params as { id: string };
+  return (request: MCPRequest): MCPResponsePromise => {
+    const { id: _id } = request.params as { id: string };
     const { body } = request.params as { body: string };
-    
+
     // Mock implementation for now
     const comment = {
       id: `comment-${Date.now()}`,
       body,
       createdAt: new Date().toISOString(),
     };
-    
+
     return {
       id: request.id,
       data: {
