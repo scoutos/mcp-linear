@@ -8,27 +8,34 @@ default:
 dev:
     deno run --watch main.ts
 
-# Format code using Deno's formatter
+# Format code using Deno's formatter (fixes issues)
 fmt *args='':
     deno fmt {{args}}
 
-# Lint code using Deno's linter
+# Check formatting without modifying files (for CI)
+fmt-check:
+    deno fmt --check
+
+# Lint code using Deno's linter (doesn't fix issues)
 lint *args='':
     deno lint {{args}}
 
-# Format and lint all files
-check: fmt lint
+# Run all local checks with auto-fixing where possible
+check: fmt lint check-types test
 
-# CI checks for all files (for GitHub Actions)
-ci: fmt lint check-types test
+# Run all CI checks (no auto-fixing)
+ci-check: fmt-check lint check-types test
 
-# Only format and lint staged files (pre-commit)
+# CI checks (use ci-check)
+ci: ci-check
+
+# Only format and lint staged files (pre-commit) with auto-fixing
 pre-commit:
     #!/usr/bin/env bash
     STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.([jt]sx?|json)$')
     TS_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.([t]sx?)$')
     if [ -n "$STAGED_FILES" ]; then
-        echo "Formatting staged files..."
+        echo "Formatting staged files (with auto-fix)..."
         echo "$STAGED_FILES" | xargs deno fmt
         echo "Linting staged files..."
         echo "$STAGED_FILES" | xargs deno lint
@@ -44,6 +51,12 @@ pre-commit:
     echo "Running tests..."
     deno test
 
+# Pre-push hook to ensure CI checks will pass
+pre-push:
+    #!/usr/bin/env bash
+    echo "Running CI checks before push..."
+    just ci-check
+
 # Run tests with coverage
 test *args='--coverage':
     deno test {{args}}
@@ -58,13 +71,21 @@ setup-hooks:
     echo "Setting up git hooks..."
     # Create hooks directory if it doesn't exist
     mkdir -p .git/hooks
+    
     # Create pre-commit hook that calls our just pre-commit recipe
     echo '#!/bin/sh
     # Run the pre-commit recipe from justfile
     just pre-commit
     ' > .git/hooks/pre-commit
-    # Make the hook executable
     chmod +x .git/hooks/pre-commit
+    
+    # Create pre-push hook that calls our just pre-push recipe
+    echo '#!/bin/sh
+    # Run the pre-push recipe from justfile
+    just pre-push
+    ' > .git/hooks/pre-push
+    chmod +x .git/hooks/pre-push
+    
     echo "Git hooks have been set up successfully"
 
 # Script that should be run after cloning the repository

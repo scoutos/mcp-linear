@@ -23,14 +23,5 @@ jobs:
       with:
         just-version: 1.13.0
 
-    - name: Verify formatting
-      run: just fmt --check
-
-    - name: Lint
-      run: just lint
-
-    - name: Type check
-      run: just check-types
-
-    - name: Run tests
-      run: just test
+    - name: Run CI checks
+      run: just ci-check
