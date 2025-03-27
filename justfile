@@ -9,15 +9,18 @@ dev:
     deno run --watch main.ts
 
 # Format code using Deno's formatter
-fmt:
-    deno fmt
+fmt *args='':
+    deno fmt {{args}}
 
 # Lint code using Deno's linter
-lint:
-    deno lint
+lint *args='':
+    deno lint {{args}}
 
 # Format and lint all files
 check: fmt lint
+
+# CI checks for all files (for GitHub Actions)
+ci: fmt lint check-types test
 
 # Only format and lint staged files (pre-commit)
 pre-commit:
@@ -37,14 +40,17 @@ pre-commit:
         # Run type check on the whole project as Deno doesn't support type checking individual files
         deno check **/*.ts
     fi
+    # Run tests
+    echo "Running tests..."
+    deno test
 
 # Run tests with coverage
-test:
-    deno test --coverage
+test *args='--coverage':
+    deno test {{args}}
 
 # Check types
-check-types:
-    deno check **/*.ts
+check-types *args='':
+    deno check **/*.ts {{args}}
 
 # Setup git hooks
 setup-hooks:
