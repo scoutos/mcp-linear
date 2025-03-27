@@ -17,6 +17,8 @@ Effects represent all side-effects and external interactions in our application:
 - Named with the suffix "Effect" (e.g., `BlobStorageEffect`)
 - Organized in an `/effects` directory, categorized by domain
 
+**IMPORTANT**: Effects should represent general-purpose capabilities, not specific services. They are the "ports" in the ports and adapters (hexagonal) architecture.
+
 Example:
 
 ```typescript
@@ -25,6 +27,15 @@ export type BlobStorageEffect = {
   saveBlob: (key: string, data: Uint8Array) => Promise<void>;
   getBlob: (key: string) => Promise<Uint8Array | null>;
   deleteBlob: (key: string) => Promise<void>;
+};
+```
+
+Another example for HTTP communication:
+
+```typescript
+// effects/http/index.ts
+export type HTTPEffect = {
+  fetch: (url: string, options: RequestOptions) => Promise<Response>;
 };
 ```
 
@@ -51,6 +62,18 @@ export const cloudBlobStorage: BlobStorageEffect = {
   async deleteBlob(key) {
     // Cloud-specific implementation
   },
+};
+```
+
+For HTTP, you might have:
+
+```typescript
+// effects/http/deno-fetch.ts
+export const denoFetch: HTTPEffect = {
+  async fetch(url, options) {
+    // Deno-specific implementation using built-in fetch
+    return await fetch(url, options);
+  }
 };
 ```
 
@@ -85,6 +108,40 @@ export const GetChatHistoryAction = (effects: GetChatHistoryEffects) => ({
 
     const history = new TextDecoder().decode(blobData);
     return JSON.parse(history) as string[];
+  },
+});
+```
+
+A service-specific action using generic effects:
+
+```typescript
+// actions/search-linear-issues.ts
+import { HTTPEffect } from "../effects/http";
+import { AuthEffect } from "../effects/auth";
+
+type SearchIssuesEffects = {
+  http: HTTPEffect;
+  auth: AuthEffect;
+};
+
+export const SearchIssuesAction = (effects: SearchIssuesEffects) => ({
+  async execute(query: string): Promise<Issue[]> {
+    const token = await effects.auth.getAccessToken();
+    
+    // Use generic HTTP effect to make Linear-specific API call
+    const response = await effects.http.fetch("https://api.linear.app/graphql", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: `{ issues(filter: { search: "${query}" }) { nodes { id title } } }`
+      })
+    });
+    
+    const data = await response.json();
+    return data.issues.nodes;
   },
 });
 ```
