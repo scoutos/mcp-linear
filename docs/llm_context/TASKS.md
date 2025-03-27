@@ -9,6 +9,10 @@ This document outlines standard instructions for common tasks. When the user req
 1. Run `git status` to check modified files
 2. Run `git diff` to review changes
 3. Create a descriptive commit message following conventional commits
+   - Follow the format: `<type>(<scope>): <description>`
+   - Use scope when changes affect a specific area (e.g., `feat(dx)`, `docs(llm)`)
+   - Omit scope when changes affect the entire product
+   - See `COMMIT-STYLE.md` for detailed guidelines
 4. Commit changes without "created by Claude" messaging
 
 ### When user says "push changes" or "push this up":

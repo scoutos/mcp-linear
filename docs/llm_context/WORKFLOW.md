@@ -17,6 +17,6 @@
 - When starting work on something new, fetch main, and create a new feature branch from main
 - It is OK to create and maintain multiple local working branches off of our feature branch
 - Do not push these working branches to the remote, only the main feature branch
-- Use conventional commits
+- Use conventional commits with appropriate scopes (see `COMMIT-STYLE.md`)
 - Use the `gh` CLI for interacting with Github and doing things like interacting with pull-requests or checks
 - When creating commits or pull-requests, refrain from using any _created by Claude Code_ type of messaging
