@@ -18,7 +18,7 @@ We need to expose these core Linear capabilities through our MCP server:
 
 ### 1. Core Effects Definition
 
-We'll need these general effects:
+We'll need these fundamental effects:
 
 - **HTTPEffect**: For making network requests to Linear's API
   ```typescript
@@ -27,19 +27,12 @@ We'll need these general effects:
   };
   ```
 
-- **AuthEffect**: For handling authentication with Linear
+- **StorageEffect**: For persisting data like tokens or cached responses
   ```typescript
-  type AuthEffect = {
-    getAccessToken: () => Promise<string>;
-    refreshToken: () => Promise<string>;
-  };
-  ```
-
-- **ConfigEffect**: For managing configuration values
-  ```typescript
-  type ConfigEffect = {
-    get: (key: string) => Promise<string | null>;
-    set: (key: string, value: string) => Promise<void>;
+  type StorageEffect = {
+    read: (key: string) => Promise<string | null>;
+    write: (key: string, value: string) => Promise<void>;
+    delete: (key: string) => Promise<void>;
   };
   ```
 
@@ -52,32 +45,63 @@ We'll need these general effects:
   };
   ```
 
-### 2. Action Implementation
+### 2. Business Domain Types
 
-Create actions that use these effects to interact with Linear:
+Define core business entities that represent our domain:
+
+- **TokenSource**: For handling Linear authentication
+  ```typescript
+  type TokenSource = {
+    getToken: () => Promise<string>;
+    refreshToken: () => Promise<string>;
+  };
+  ```
+
+- **LinearClient**: A higher-level abstraction for Linear operations
+  ```typescript
+  type LinearClient = {
+    searchIssues: (query: string) => Promise<Issue[]>;
+    getIssue: (id: string) => Promise<Issue>;
+    // other methods
+  };
+  ```
+
+- **MCPTypes**: Types representing the MCP protocol
+  ```typescript
+  type MCPRequest = {
+    // MCP request structure
+  };
+  
+  type MCPResponse = {
+    // MCP response structure
+  };
+  ```
+
+### 3. Action Implementation
+
+Create actions that use effects to implement business logic:
 
 - **SearchIssuesAction**: Search for issues matching criteria
 - **GetIssueAction**: Retrieve a specific issue and its details
 - **UpdateIssueAction**: Modify an existing issue
 - **AddCommentAction**: Add a comment to an issue
 
-### 3. MCP Server Implementation
+### 4. MCP Server Implementation
 
 Build the MCP server that:
 - Receives MCP protocol requests
 - Routes them to appropriate actions
 - Returns responses in MCP format
 
-### 4. Effect Implementations
+### 5. Effect Implementations
 
 Create concrete implementations for each effect:
 
 - **DenoFetch**: Implementation of HTTPEffect using Deno's native fetch
-- **LinearAuthProvider**: Implementation of AuthEffect for Linear
-- **FileSystemConfig**: Implementation of ConfigEffect using local files
+- **FileSystemStorage**: Implementation of StorageEffect using Deno's file system APIs
 - **ConsoleLogger**: Basic implementation of LoggingEffect
 
-### 5. Testing Strategy
+### 6. Testing Strategy
 
 - Create in-memory implementations of each effect for testing
 - Test actions in isolation with mock effects
@@ -92,17 +116,17 @@ We'll implement features incrementally:
 1. **Setup Phase**
    - Define core effects and their test implementations
    - Set up project structure following Actions and Effects pattern
-   - Create basic MCP server structure
+   - Create basic domain types (TokenSource, LinearClient)
 
 2. **Linear Integration Phase**
-   - Implement Linear API integration
-   - Create actions for each required capability
+   - Implement actions for Linear operations
+   - Create TokenSource implementation for Linear
    - Test each action independently
 
 3. **MCP Protocol Phase**
+   - Define MCP request/response types
    - Implement MCP request handlers
-   - Create response formatters
-   - Add error handling
+   - Create MCP server with routing
 
 4. **Polish Phase**
    - Improve error handling and logging
@@ -119,16 +143,10 @@ We'll implement features incrementally:
     deno-fetch.test.ts # Tests for Deno implementation
     in-memory.ts      # Test implementation
     in-memory.test.ts # Tests for in-memory implementation
-  /auth/
-    index.ts          # AuthEffect definition
-    linear-auth.ts    # Linear implementation
-    linear-auth.test.ts # Tests for Linear implementation
-    in-memory.ts      # Test implementation
-    in-memory.test.ts # Tests for in-memory implementation
-  /config/
-    index.ts          # ConfigEffect definition
-    fs-config.ts      # File system implementation
-    fs-config.test.ts # Tests for file system implementation 
+  /storage/
+    index.ts          # StorageEffect definition
+    file-system.ts    # File system implementation
+    file-system.test.ts # Tests for implementation
     in-memory.ts      # Test implementation
     in-memory.test.ts # Tests for in-memory implementation
   /logging/
@@ -137,6 +155,15 @@ We'll implement features incrementally:
     console-logger.test.ts # Tests for console implementation
     in-memory.ts      # Test implementation
     in-memory.test.ts # Tests for in-memory implementation
+
+/types/
+  linear.ts           # Types for Linear entities (Issue, Comment, etc.)
+  token-source.ts     # TokenSource interface
+  mcp.ts              # MCP protocol types
+
+/token-sources/
+  linear-token.ts     # Linear token implementation
+  linear-token.test.ts # Tests for Linear token source
 
 /actions/
   search-issues.ts    # SearchIssuesAction
