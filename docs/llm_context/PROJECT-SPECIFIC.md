@@ -34,26 +34,104 @@ Our integration with Linear focuses on these core capabilities:
 
 These capabilities are implemented as actions that use fundamental effects like HTTP for communicating with Linear's GraphQL API.
 
-### Tokens and Authentication
+### Linear API Authentication
 
-Linear authentication will be handled as business entities passed to actions rather than as specific effects:
+Linear authentication uses API keys, which can be obtained from the Linear application settings. The API key is used to authenticate GraphQL API requests.
+
+#### Linear API Key
+
+To obtain a Linear API key:
+1. Log in to Linear
+2. Go to Settings > API > Personal API keys
+3. Generate a new API key with appropriate permissions
+
+This API key should be securely stored and provided to the MCP server via environment variables or secure configuration.
+
+#### API Usage
+
+Linear uses a GraphQL API, requiring:
+- POST requests to `https://api.linear.app/graphql`
+- Authentication via the `Authorization: Bearer YOUR_API_KEY` header
+- GraphQL queries/mutations in the request body
+
+### GraphQL Integration
+
+Linear's GraphQL API requires proper query formatting:
+
+```graphql
+query SearchIssues($query: String!) {
+  issues(filter: { search: $query }, first: 25) {
+    nodes {
+      id
+      title
+      description
+      state {
+        name
+      }
+      assignee {
+        name
+      }
+      team {
+        name
+        key
+      }
+      updatedAt
+    }
+  }
+}
+```
+
+Our implementation needs to:
+1. Format proper GraphQL queries
+2. Handle variables and pagination
+3. Process responses into our domain types
+4. Handle errors gracefully
+
+### Configuration and Authentication
+
+Linear authentication uses API keys, which will be handled using a typed configuration object passed directly to actions, following our pure-action pattern:
 
 ```typescript
-// Example of a token source as a business entity rather than an effect
-type TokenSource = {
-  getToken: () => Promise<string>;
+// Define configuration type
+type Config = {
+  linearApiKey: string;
 };
 
-// Usage in an action
+// Function to load config from environment
+export function getConfig(): Config {
+  const linearApiKey = Deno.env.get("LINEAR_API_KEY");
+  if (!linearApiKey) {
+    throw new Error("LINEAR_API_KEY environment variable is not set");
+  }
+  
+  return {
+    linearApiKey,
+  };
+}
+
+// Usage in an action - configuration is passed explicitly
 export const SearchIssuesAction = (effects: { http: HTTPEffect }) => ({
-  async execute(query: string, tokenSource: TokenSource): Promise<Issue[]> {
-    const token = await tokenSource.getToken();
-    // Use token with HTTP effect to call Linear API
+  async execute(query: string, config: Config): Promise<Issue[]> {
+    // Use config.linearApiKey with HTTP effect to call Linear API
+    const response = await effects.http.fetch("https://api.linear.app/graphql", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${config.linearApiKey}`,
+        "Content-Type": "application/json"
+      },
+      // Query body here
+    });
+    
+    // Process response
   }
 });
 ```
 
-This approach keeps our effects general-purpose while still supporting the specific authentication needs of Linear.
+This approach:
+1. Keeps actions pure by explicitly passing all dependencies
+2. Isolates environment access to the config utility
+3. Makes testing easier by allowing mock configs to be passed
+4. Improves type safety with typed configuration
 
 ### MCP Protocol Handlers
 
@@ -84,3 +162,32 @@ export const createMCPHandlers = (actions: {
 ```
 
 This layered approach keeps the MCP protocol concerns separate from the core business logic in our actions.
+
+## Implementation Checklist for Linear API Integration
+
+### 1. Configuration for Linear API
+- [ ] Create Config type definition
+- [ ] Implement getConfig utility for environment-based config
+- [ ] Add validation and error handling
+- [ ] Write tests with mocked environment
+
+### 2. GraphQL Utilities
+- [ ] Create GraphQL query builder
+- [ ] Implement response parsing utilities
+- [ ] Add error handling for GraphQL errors
+
+### 3. SearchIssuesAction
+- [ ] Implement action using HTTP effect
+- [ ] Format GraphQL query for issue search
+- [ ] Parse and transform response to Issue[] type
+- [ ] Handle pagination if needed
+
+### 4. Integration with MCP Handlers
+- [ ] Update handler dependencies to use real actions
+- [ ] Pass token source to actions from handlers
+- [ ] Update error handling for real API scenarios
+
+### 5. Testing
+- [ ] Unit tests for TokenSource
+- [ ] Unit tests for SearchIssuesAction
+- [ ] Integration tests for the full flow

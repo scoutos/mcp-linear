@@ -117,7 +117,8 @@ export const denoFetch: HTTPEffect = {
 
 Actions contain the core business logic of the application:
 
-- Pure functional logic that uses effects for side effects
+- **Pure functional logic** that receives all context through parameters
+- No direct interaction with environment, configuration, or other global state
 - Structured as factory functions that accept required effects
 - Return an object with an `execute` method (or other domain-specific methods)
 - Focus on domain language, not technical implementation
@@ -147,26 +148,27 @@ export const GetChatHistoryAction = (effects: GetChatHistoryEffects) => ({
 });
 ```
 
-A service-specific action using generic effects:
+A service-specific action using generic effects and configuration:
 
 ```typescript
 // actions/search-linear-issues.ts
 import { HTTPEffect } from "../effects/http";
-import { TokenSource } from "../types"; // Not an effect, but a business entity
+import { Config } from "../types/config";
 
 type SearchIssuesEffects = {
   http: HTTPEffect;
 };
 
 export const SearchIssuesAction = (effects: SearchIssuesEffects) => ({
-  async execute(query: string, tokenSource: TokenSource): Promise<Issue[]> {
-    const token = await tokenSource.getToken();
+  async execute(query: string, config: Config): Promise<Issue[]> {
+    // Configuration is passed explicitly, not accessed from global state
+    const apiKey = config.linearApiKey;
     
     // Use generic HTTP effect to make Linear-specific API call
     const response = await effects.http.fetch("https://api.linear.app/graphql", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -179,6 +181,18 @@ export const SearchIssuesAction = (effects: SearchIssuesEffects) => ({
   },
 });
 ```
+
+#### Key Principles for Action Purity
+
+1. **Explicit Configuration**: Any configuration required by an action should be passed explicitly as a parameter, not accessed directly from environment variables or global state.
+
+2. **No Side Effects**: Actions should not directly create side effects. All side effects should be performed via effects passed to the action.
+
+3. **Explicit Dependencies**: All dependencies (effects, configuration, etc.) should be explicitly declared in the action's parameters.
+
+4. **No Global State**: Actions should not access global state like environment variables, global configuration, or singletons directly.
+
+5. **Deterministic Testing**: Actions should be deterministic and easy to test, with all external influences controllable through parameters.
 
 ## Dependency Injection
 

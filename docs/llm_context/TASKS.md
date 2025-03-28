@@ -48,3 +48,43 @@ This document outlines standard instructions for common tasks. When the user req
 3. Run linting if available
 4. Report results and any necessary fixes
 
+## Linear API Integration Tasks
+
+### Linear API Key Token Source Implementation
+
+1. Create the token source directory structure if needed
+2. Implement environment-based API key TokenSource
+3. Add validation and error handling
+4. Write tests with mocked environment
+
+### GraphQL Utilities for Linear API
+
+1. Create a utilities directory and files
+2. Implement query building functions
+3. Create response parsing utilities
+4. Add error handling for GraphQL errors
+5. Write tests for GraphQL utilities
+
+### SearchIssuesAction Implementation
+
+1. Create the action file and test file
+2. Implement the action factory function
+3. Build the GraphQL query for search
+4. Process and transform the response
+5. Implement error handling
+6. Write tests with mocked HTTP effect
+
+### MCP Handler Integration
+
+1. Update handler dependencies to accept actions
+2. Modify the search handler to use real SearchIssuesAction
+3. Implement token source creation from requests
+4. Update error handling for real API scenarios
+5. Write tests for the updated handlers
+
+### End-to-End Testing
+
+1. Create an integration test for the search flow
+2. Test with mock HTTP responses
+3. Verify the entire flow works as expected
+4. Create a development harness for manual testing

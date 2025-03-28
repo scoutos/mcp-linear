@@ -2,186 +2,105 @@
 
 This document outlines the plan for implementing the MCP server that integrates with Linear.
 
-## Understanding the Components
+## Current Status
 
-### What is an MCP Server?
-An MCP (Model Context Protocol) server acts as a bridge between AI models and external data sources/services. Our goal is to build an MCP server that provides AI models standardized access to Linear's issue tracking functionality.
+We've made progress on the MCP server implementation:
+- Basic server structure is in place
+- HTTP effect and in-memory test implementation exist
+- Response formatters for the MCP protocol are implemented
+- Type definitions for Linear, MCP protocol, and TokenSource are defined
+- Mock handlers for search, get, update, and comment are functioning
 
-### Linear Functionality
-We need to expose these core Linear capabilities through our MCP server:
-- Search issues
-- Read issues and comments
-- Edit issues (body, tags, etc.)
-- Add comments
+## Immediate Focus: Linear Authentication and Search
+
+Our immediate priority is to implement authentication with Linear and enable real issue searching. This means:
+
+1. Implementing a TokenSource for Linear API keys
+2. Creating the SearchIssuesAction with real Linear API integration
+3. Updating the MCP handlers to use the real actions instead of mock data
 
 ## Implementation Plan
 
-### 1. Core Effects Definition
+### 1. Configuration for Linear API Authentication
 
-We'll need these fundamental effects:
+- **Configuration Implementation**:
+  - Create a typed configuration interface for Linear API
+  - Implement a config utility for loading from environment variables
+  - Include validation and error handling
+  - Make configuration easily mockable for testing
 
-- **HTTPEffect**: For making network requests to Linear's API
-  ```typescript
-  type HTTPEffect = {
-    fetch: (url: string, options: RequestOptions) => Promise<Response>;
-  };
-  ```
+### 2. Linear GraphQL API Integration
 
-- **StorageEffect**: For persisting data like tokens or cached responses
-  ```typescript
-  type StorageEffect = {
-    read: (key: string) => Promise<string | null>;
-    write: (key: string, value: string) => Promise<void>;
-    delete: (key: string) => Promise<void>;
-  };
-  ```
+- **Linear GraphQL Client**:
+  - Define GraphQL queries for issue search
+  - Create helper functions to execute GraphQL operations
+  - Handle pagination for search results
+  - Implement error handling and response parsing
 
-- **LoggingEffect**: For consistent logging
-  ```typescript
-  type LoggingEffect = {
-    info: (message: string, data?: unknown) => void;
-    error: (message: string, error?: unknown) => void;
-    debug: (message: string, data?: unknown) => void;
-  };
-  ```
+### 3. SearchIssuesAction Implementation
 
-### 2. Business Domain Types
+- **Create Real Implementation**:
+  - Implement action using HTTP effect and TokenSource
+  - Transform Linear GraphQL responses to our domain types
+  - Add filtering and sorting capabilities
+  - Handle errors gracefully
 
-Define core business entities that represent our domain:
+### 4. Connect MCP Handlers to Real Actions
 
-- **TokenSource**: For handling Linear authentication
-  ```typescript
-  type TokenSource = {
-    getToken: () => Promise<string>;
-    refreshToken: () => Promise<string>;
-  };
-  ```
+- **Update Handlers**:
+  - Refactor handler dependencies to accept actions
+  - Connect search handler to real SearchIssuesAction
+  - Ensure proper parameter passing and error handling
 
-- **LinearClient**: A higher-level abstraction for Linear operations
-  ```typescript
-  type LinearClient = {
-    searchIssues: (query: string) => Promise<Issue[]>;
-    getIssue: (id: string) => Promise<Issue>;
-    // other methods
-  };
-  ```
+### 5. Testing Strategy
 
-- **MCPTypes**: Types representing the MCP protocol
-  ```typescript
-  type MCPRequest = {
-    // MCP request structure
-  };
-  
-  type MCPResponse = {
-    // MCP response structure
-  };
-  ```
+- **Unit Tests**:
+  - Test TokenSource implementation
+  - Test SearchIssuesAction with mock HTTP effect
+  - Test updated handlers with mock actions
 
-### 3. Action Implementation
-
-Create actions that use effects to implement business logic:
-
-- **SearchIssuesAction**: Search for issues matching criteria
-- **GetIssueAction**: Retrieve a specific issue and its details
-- **UpdateIssueAction**: Modify an existing issue
-- **AddCommentAction**: Add a comment to an issue
-
-### 4. MCP Server Implementation
-
-Build the MCP server that:
-- Receives MCP protocol requests
-- Routes them to appropriate actions
-- Returns responses in MCP format
-
-### 5. Effect Implementations
-
-Create concrete implementations for each effect:
-
-- **DenoFetch**: Implementation of HTTPEffect using Deno's native fetch
-- **FileSystemStorage**: Implementation of StorageEffect using Deno's file system APIs
-- **ConsoleLogger**: Basic implementation of LoggingEffect
-
-### 6. Testing Strategy
-
-- Create in-memory implementations of each effect for testing
-- Test actions in isolation with mock effects
-- Test the MCP server interface with mock actions
-- Create integration tests that test the full flow
-- Co-locate tests with implementation files following our code style guide
+- **Integration Tests**:
+  - Test end-to-end flow with mock HTTP responses
+  - Create a test harness for manual verification
 
 ## Development Approach
 
 We'll implement features incrementally:
 
-1. **Setup Phase**
-   - Define core effects and their test implementations
-   - Set up project structure following Actions and Effects pattern
-   - Create basic domain types (TokenSource, LinearClient)
+1. **Authentication Phase**
+   - Implement TokenSource for Linear API keys
+   - Add configuration options
+   - Write comprehensive tests
 
-2. **Linear Integration Phase**
-   - Implement actions for Linear operations
-   - Create TokenSource implementation for Linear
-   - Test each action independently
+2. **API Integration Phase**
+   - Create GraphQL query utilities for Linear
+   - Implement SearchIssuesAction
+   - Test with mock HTTP responses
 
-3. **MCP Protocol Phase**
-   - Define MCP request/response types
-   - Implement MCP request handlers
-   - Create MCP server with routing
+3. **MCP Integration Phase**
+   - Connect real actions to MCP handlers
+   - Update server to use real handlers
+   - Test end-to-end flow
 
 4. **Polish Phase**
-   - Improve error handling and logging
-   - Add comprehensive testing
-   - Document usage and integration
+   - Improve error handling
+   - Add robust logging
+   - Document usage and requirements
 
-## Key Files and Structure
+## Key Files to Implement
 
 ```
-/effects/
-  /http/
-    index.ts          # HTTPEffect definition
-    deno-fetch.ts     # Deno implementation
-    deno-fetch.test.ts # Tests for Deno implementation
-    in-memory.ts      # Test implementation
-    in-memory.test.ts # Tests for in-memory implementation
-  /storage/
-    index.ts          # StorageEffect definition
-    file-system.ts    # File system implementation
-    file-system.test.ts # Tests for implementation
-    in-memory.ts      # Test implementation
-    in-memory.test.ts # Tests for in-memory implementation
-  /logging/
-    index.ts          # LoggingEffect definition
-    console-logger.ts # Console implementation
-    console-logger.test.ts # Tests for console implementation
-    in-memory.ts      # Test implementation
-    in-memory.test.ts # Tests for in-memory implementation
-
-/types/
-  linear.ts           # Types for Linear entities (Issue, Comment, etc.)
-  token-source.ts     # TokenSource interface
-  mcp.ts              # MCP protocol types
-
 /token-sources/
-  linear-token.ts     # Linear token implementation
-  linear-token.test.ts # Tests for Linear token source
+  linear-api-key.ts      # API key implementation
+  linear-api-key.test.ts # Tests for API key implementation
 
 /actions/
-  search-issues.ts    # SearchIssuesAction
-  search-issues.test.ts # Tests for SearchIssuesAction
-  get-issue.ts        # GetIssueAction
-  get-issue.test.ts   # Tests for GetIssueAction
-  update-issue.ts     # UpdateIssueAction
-  update-issue.test.ts # Tests for UpdateIssueAction
-  add-comment.ts      # AddCommentAction
-  add-comment.test.ts # Tests for AddCommentAction
-  
-/mcp/
-  server.ts           # MCP server implementation
-  server.test.ts      # Tests for server implementation
-  handlers.ts         # Request handlers
-  handlers.test.ts    # Tests for request handlers
-  formatter.ts        # Response formatters
-  formatter.test.ts   # Tests for response formatters
+  search-issues.ts       # Real SearchIssuesAction implementation 
+  search-issues.test.ts  # Tests for SearchIssuesAction
+
+/utils/
+  linear-graphql.ts      # GraphQL utilities for Linear API
+  linear-graphql.test.ts # Tests for GraphQL utilities
 ```
 
-This structure follows our Actions and Effects architecture while focusing on the specific needs of an MCP server for Linear integration. Tests are co-located with the implementation files they're testing, as per our code style guide.
+After completing this phase, we'll be able to authenticate with Linear and perform real issue searches through the MCP protocol.
