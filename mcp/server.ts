@@ -1,15 +1,19 @@
 /**
  * MCP server implementation
  */
-import { MCPTool, MCPToolsResponse } from "../types/mcp.ts";
+import { formatMCPResponse } from "./formatter.ts";
+import { createMCPHandlers } from "./handlers.ts";
+import { MCPRequest, MCPTool, MCPToolsResponse } from "../types/mcp.ts";
 
 // Default port for the server
 export const DEFAULT_PORT = 8000;
 
 /**
  * Create an HTTP handler for the MCP server
+ *
+ * @param customHandlers Optional custom handlers to use instead of default mock handlers
  */
-export function createServer() {
+export function createServer(customHandlers = createMCPHandlers()) {
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -74,9 +78,9 @@ export function createServer() {
 
     // Search Linear issues
     if (path === "/mcp/tools/linear-search" && method === "POST") {
-      let _body;
+      let body;
       try {
-        _body = await request.json();
+        body = await request.json();
       } catch (_e) {
         return new Response(
           JSON.stringify({ error: "Invalid JSON body" }),
@@ -87,51 +91,36 @@ export function createServer() {
         );
       }
 
-      // Return mock search results for now
-      return new Response(
-        JSON.stringify({
-          results: [
-            {
-              id: "TEST-123",
-              title: "Test Issue",
-              description: "This is a test issue",
-              status: "In Progress",
-            },
-          ],
-        }),
-        {
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      // Create MCP request
+      const mcpRequest: MCPRequest = {
+        id: crypto.randomUUID(),
+        params: body,
+      };
+
+      // Use search handler
+      const response = await customHandlers.searchIssues(mcpRequest);
+
+      // Format response
+      return formatMCPResponse(response);
     }
 
     // Get issue details
     if (
       path.match(/^\/mcp\/tools\/linear-issue\/[\w-]+$/) && method === "GET"
     ) {
-      const issueId = path.split("/").pop();
+      const issueId = path.split("/").pop() || "";
 
-      // Return mock issue details
-      return new Response(
-        JSON.stringify({
-          issue: {
-            id: issueId,
-            title: "Test Issue",
-            description: "This is a test issue",
-            status: "In Progress",
-            comments: [
-              {
-                id: "comment-1",
-                body: "This is a test comment",
-                createdAt: new Date().toISOString(),
-              },
-            ],
-          },
-        }),
-        {
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      // Create MCP request
+      const mcpRequest: MCPRequest = {
+        id: crypto.randomUUID(),
+        params: { id: issueId },
+      };
+
+      // Use get issue handler
+      const response = await customHandlers.getIssue(mcpRequest);
+
+      // Format response
+      return formatMCPResponse(response);
     }
 
     // Update issue
@@ -151,19 +140,22 @@ export function createServer() {
         );
       }
 
-      // Return success response
-      return new Response(
-        JSON.stringify({
-          success: true,
-          issue: {
-            id: path.split("/").pop(),
-            ...body,
-          },
-        }),
-        {
-          headers: { "Content-Type": "application/json" },
+      const issueId = path.split("/").pop() || "";
+
+      // Create MCP request
+      const mcpRequest: MCPRequest = {
+        id: crypto.randomUUID(),
+        params: {
+          id: issueId,
+          ...body,
         },
-      );
+      };
+
+      // Use update issue handler
+      const response = await customHandlers.updateIssue(mcpRequest);
+
+      // Format response
+      return formatMCPResponse(response);
     }
 
     // Add comment to issue
@@ -184,20 +176,22 @@ export function createServer() {
         );
       }
 
-      // Return success response with mock comment
-      return new Response(
-        JSON.stringify({
-          success: true,
-          comment: {
-            id: `comment-${Date.now()}`,
-            body: body.body,
-            createdAt: new Date().toISOString(),
-          },
-        }),
-        {
-          headers: { "Content-Type": "application/json" },
+      const issueId = path.split("/").pop()?.replace("/comment", "") || "";
+
+      // Create MCP request
+      const mcpRequest: MCPRequest = {
+        id: crypto.randomUUID(),
+        params: {
+          id: issueId,
+          ...body,
         },
-      );
+      };
+
+      // Use add comment handler
+      const response = await customHandlers.addComment(mcpRequest);
+
+      // Format response
+      return formatMCPResponse(response);
     }
 
     // Not found

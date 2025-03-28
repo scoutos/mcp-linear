@@ -49,7 +49,7 @@ pre-commit:
     fi
     # Run tests
     echo "Running tests..."
-    deno test
+    deno test --allow-env
 
 # Pre-push hook to ensure CI checks will pass
 pre-push:
@@ -59,7 +59,7 @@ pre-push:
 
 # Run tests with coverage
 test *args='--coverage':
-    deno test {{args}}
+    deno test --allow-env {{args}}
 
 # Check types
 check-types *args='':

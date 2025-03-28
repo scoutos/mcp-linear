@@ -3,34 +3,71 @@
  */
 import { MCPRequest, MCPResponsePromise } from "../types/mcp.ts";
 import { Issue } from "../types/linear.ts";
+import { SearchIssuesAction } from "../actions/search-issues.ts";
+import { Config } from "../types/config.ts";
+import { getConfig } from "../utils/config.ts";
 
 /**
  * Handler dependencies
  */
-export type HandlerDependencies = Record<string, never>;
+export type HandlerDependencies = {
+  actions?: {
+    searchIssues?: ReturnType<typeof SearchIssuesAction>;
+  };
+  config?: Config;
+};
 
 /**
  * Handler for the search issues endpoint
  */
-export function createSearchIssuesHandler(_deps: HandlerDependencies) {
-  return (request: MCPRequest): MCPResponsePromise => {
-    // Parameter is unused since this is a mock implementation
-    const _params = request.params;
+export function createSearchIssuesHandler(deps: HandlerDependencies) {
+  return async (request: MCPRequest): Promise<MCPResponsePromise> => {
+    try {
+      // Extract the query parameter
+      const query = request.params.query as string;
 
-    // Mock implementation for now
-    const results: Issue[] = [
-      {
-        id: "TEST-123",
-        title: "Test Issue",
-        description: "This is a test issue",
-        status: "In Progress",
-      },
-    ];
+      // Use real action if provided, otherwise fallback to mock
+      if (deps.actions?.searchIssues) {
+        // Get configuration
+        const config = deps.config || getConfig();
 
-    return {
-      id: request.id,
-      data: { results },
-    };
+        // Use the real search action
+        const searchResults = await deps.actions.searchIssues.execute(
+          { query },
+          config,
+        );
+
+        return {
+          id: request.id,
+          data: searchResults,
+        };
+      } else {
+        // Mock implementation as fallback
+        const results: Issue[] = [
+          {
+            id: "TEST-123",
+            title: "Test Issue",
+            description: "This is a test issue",
+            status: "In Progress",
+          },
+        ];
+
+        return {
+          id: request.id,
+          data: { results },
+        };
+      }
+    } catch (error) {
+      // Handle errors
+      return {
+        id: request.id,
+        data: { results: [] },
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          code: "SEARCH_ERROR",
+        },
+      };
+    }
   };
 }
 
@@ -116,7 +153,7 @@ export function createAddCommentHandler(_deps: HandlerDependencies) {
 /**
  * Create all MCP handlers
  */
-export function createMCPHandlers(deps: HandlerDependencies) {
+export function createMCPHandlers(deps: HandlerDependencies = {}) {
   return {
     searchIssues: createSearchIssuesHandler(deps),
     getIssue: createGetIssueHandler(deps),
