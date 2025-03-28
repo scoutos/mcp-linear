@@ -2,6 +2,12 @@
 .deno/
 deno.lock
 
+# Build output
+dist/
+
+# Node.js
+node_modules/
+
 # Environment variables
 .env
 .env.local

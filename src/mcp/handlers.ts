@@ -1,11 +1,11 @@
 /**
  * MCP request handlers
  */
-import { MCPRequest, MCPResponsePromise } from "../types/mcp.ts";
-import { Issue } from "../types/linear.ts";
-import { SearchIssuesAction } from "../actions/search-issues.ts";
-import { Config } from "../types/config.ts";
-import { getConfig } from "../utils/config.ts";
+import { MCPRequest, MCPResponsePromise } from "../types/mcp";
+import { Issue } from "../types/linear";
+import { SearchIssuesAction } from "../actions/search-issues";
+import { Config } from "../types/config";
+import { getConfig } from "../utils/config";
 
 /**
  * Handler dependencies
@@ -151,9 +151,19 @@ export function createAddCommentHandler(_deps: HandlerDependencies) {
 }
 
 /**
+ * MCP handlers type
+ */
+export type MCPHandlers = {
+  searchIssues: ReturnType<typeof createSearchIssuesHandler>;
+  getIssue: ReturnType<typeof createGetIssueHandler>;
+  updateIssue: ReturnType<typeof createUpdateIssueHandler>;
+  addComment: ReturnType<typeof createAddCommentHandler>;
+};
+
+/**
  * Create all MCP handlers
  */
-export function createMCPHandlers(deps: HandlerDependencies = {}) {
+export function createMCPHandlers(deps: HandlerDependencies = {}): MCPHandlers {
   return {
     searchIssues: createSearchIssuesHandler(deps),
     getIssue: createGetIssueHandler(deps),

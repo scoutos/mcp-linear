@@ -1,16 +1,16 @@
-#!/usr/bin/env -S deno run --allow-env --allow-stdio
-
-// Main entry point for the Linear MCP server
-import { createStdioServer } from "./mcp/server-stdio.ts";
-import { denoFetch } from "./effects/http/deno-fetch.ts";
-import { SearchIssuesAction } from "./actions/search-issues.ts";
-import { createMCPHandlers } from "./mcp/handlers.ts";
-import { getConfig } from "./utils/config.ts";
+/**
+ * Entry point for the Linear MCP server
+ */
+import { createStdioServer } from "./mcp/server-stdio";
+import { nodeFetch } from "./effects/http";
+import { SearchIssuesAction } from "./actions/search-issues";
+import { createMCPHandlers } from "./mcp/handlers";
+import { getConfig } from "./utils/config";
 
 /**
  * Main application function.
  */
-export async function main() {
+export async function main(): Promise<void> {
   console.error("Linear MCP Server starting...");
 
   try {
@@ -18,7 +18,7 @@ export async function main() {
     const config = getConfig();
 
     // Create effects
-    const http = denoFetch;
+    const http = nodeFetch;
 
     // Create actions
     const searchIssues = SearchIssuesAction({ http });
@@ -37,13 +37,8 @@ export async function main() {
       error instanceof Error ? error.message : String(error),
     );
     console.error("Make sure the LINEAR_API_KEY environment variable is set");
-    Deno.exit(1);
+    process.exit(1);
   }
-}
-
-// Run the application
-if (import.meta.main) {
-  main();
 }
 
 export { createStdioServer };
