@@ -20,3 +20,15 @@
 - Use conventional commits with appropriate scopes (see `COMMIT-STYLE.md`)
 - Use the `gh` CLI for interacting with Github and doing things like interacting with pull-requests or checks
 - When creating commits or pull-requests, refrain from using any _created by Claude Code_ type of messaging
+
+## Project-specific Notes
+
+- Remember that the project uses Deno 2.0, not Deno 1.0
+- Configuration is handled through environment variables, which must be accessed via utility functions rather than directly in business logic
+- Linear integration requires an API key set via the LINEAR_API_KEY environment variable
+- Test commands need the --allow-env flag to access environment variables
+- When running the server with real Linear integration, use:
+  ```bash
+  LINEAR_API_KEY=your_linear_api_key just dev
+  ```
+- GraphQL interactions are handled through dedicated utilities in the utils directory

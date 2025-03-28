@@ -21,11 +21,50 @@ MCP Key Concepts:
 ## Linear
 
 - [Linear API Documentation](https://developers.linear.app/docs) - Official Linear API documentation for integrating with Linear
+- [Linear GraphQL API Explorer](https://developers.linear.app/docs/graphql/working-with-the-graphql-api) - Tool for exploring and testing Linear's GraphQL API
 
 Linear API Key Concepts:
 - Linear provides a GraphQL API for programmatic access to issues, comments, and other data
-- Authentication is typically done via API keys or OAuth
-- The API allows searching, creating, reading, and updating issues and comments
+- Authentication is done via API keys, which can be obtained from the Linear application settings
+- To access the API, include a bearer token in the Authorization header:
+  ```
+  Authorization: Bearer YOUR_API_KEY
+  ```
+- GraphQL queries must be sent to `https://api.linear.app/graphql` as POST requests
+- API keys should be stored securely as environment variables, not hardcoded in source code
+
+### Example Linear GraphQL Queries
+
+#### Searching Issues
+```graphql
+query SearchIssues($query: String!, $first: Int!) {
+  issues(filter: { search: $query }, first: $first) {
+    nodes {
+      id
+      title
+      description
+      state {
+        name
+      }
+      assignee {
+        name
+      }
+      team {
+        name
+        key
+      }
+      updatedAt
+    }
+  }
+}
+```
+
+## Our Implementation Patterns
+
+- Configuration is handled via typed objects and utility functions, not directly in business logic
+- GraphQL interactions are encapsulated in utility functions for easier testing and reuse
+- Actions are kept pure by passing configuration explicitly, not accessing environment directly
+- Tests for environment-dependent code need the `--allow-env` flag
 
 ## Example Repositories
 

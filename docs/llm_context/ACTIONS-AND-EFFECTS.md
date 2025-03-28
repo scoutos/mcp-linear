@@ -61,16 +61,46 @@ Authentication and configuration are typically better represented as:
 
 1. Actions that use more fundamental effects (like HTTP or storage)
 2. OR as higher-level compositions of more fundamental effects
-3. OR as business entities that are passed to actions
+3. OR as pure parameters that are passed to actions, keeping the actions pure
 
 For example, instead of an `AuthEffect`, consider:
 - `GetAccessTokenAction` that uses `StorageEffect` and/or `HTTPEffect`
-- `RefreshTokenAction` that uses `HTTPEffect`
+- Or a utility function that loads and returns authentication details, which are then passed to actions as parameters
 
 Similarly, instead of a `ConfigEffect`, consider:
-- `ReadConfigAction` and `UpdateConfigAction` that use `StorageEffect`
+- A utility function that loads configuration from environment variables or files
+- A typed configuration object that is passed to actions as a parameter
+- Keeping environment access isolated to these utility functions, not in business logic
 
-These domain concepts can be implemented as actions that leverage more fundamental effects.
+In our project, we use typed configuration objects passed directly to actions:
+
+```typescript
+// Define configuration type
+type Config = {
+  linearApiKey: string;
+};
+
+// Function to load config from environment
+export function getConfig(): Config {
+  const linearApiKey = Deno.env.get("LINEAR_API_KEY");
+  if (!linearApiKey) {
+    throw new Error("LINEAR_API_KEY environment variable is not set");
+  }
+  
+  return {
+    linearApiKey,
+  };
+}
+
+// Usage in an action - configuration is passed explicitly
+export const SearchIssuesAction = (effects: { http: HTTPEffect }) => ({
+  async execute(query: string, config: Config): Promise<SearchResults> {
+    // Use config.linearApiKey with HTTP effect to call Linear API
+  }
+});
+```
+
+This approach keeps our actions pure, making them easier to test and reason about.
 
 ### Effect Implementations
 
