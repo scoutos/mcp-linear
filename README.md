@@ -1,6 +1,6 @@
 # Linear MCP Server
 
-A Node.js implementation of an MCP server for Linear integration.
+A Deno 2.0 implementation of an MCP server for Linear integration.
 
 ## About
 
@@ -14,7 +14,7 @@ testability.
 - Standard MCP protocol implementation for Linear using the official MCP SDK
 - Support for searching issues, reading details, updating, and commenting
 - Clean architecture following functional programming principles
-- Pure Node.js implementation for broad compatibility
+- Pure Deno 2.0 implementation for speed, security and simplicity
 
 ## Getting Started
 
@@ -28,11 +28,14 @@ npx @scoutos/mcp-linear
 
 ### Installation Options
 
-#### Option 1: Using npm (Node.js)
+#### Option 1: Using Deno
 
 ```bash
-# Install globally
-npm install -g @scoutos/mcp-linear
+# Run directly without installation 
+deno run --allow-env --allow-net main.ts
+
+# Or install globally
+deno install --allow-env --allow-net -n mcp-linear main.ts
 
 # Run the server
 mcp-linear
@@ -103,38 +106,49 @@ To verify your setup:
 
 ## Development
 
-This project uses Node.js and TypeScript for development.
+This project uses [Deno 2.0](https://docs.deno.com) and [just](https://github.com/casey/just) for development workflow.
 
 ### Prerequisites
 
-- Node.js (v18+)
-- npm
+- [Deno 2.0](https://docs.deno.com)
+- [just](https://github.com/casey/just)
 
 ### First-time Setup
 
 After cloning the repository, run:
 
 ```bash
-npm install
+just post-clone
 ```
+
+This will set up the required git hooks to ensure consistent code quality.
 
 ### Available Commands
 
 ```bash
-# Start the development server with file watching
-npm run dev
+# List all available commands
+just
 
-# Start the server
-npm start
+# Run the development server with file watching
+just dev
 
-# Build the project
-npm run build
+# Format code
+just fmt
+
+# Lint code
+just lint
+
+# Run all local checks with auto-fixing where possible
+just check
 
 # Run tests
-npm test
+just test
 
-# Run linting
-npm run lint
+# Check types
+just check-types
+
+# Set up git hooks (runs automatically from post-clone)
+just setup-hooks
 ```
 
 ### Integrations and Dependencies
@@ -149,29 +163,24 @@ npm run lint
 ```
 /
 ├── effects/             # Core effect definitions and implementations
-│   ├── http/            # HTTP effects for API communication
-│   ├── storage/         # Storage effects for data persistence (future)
-│   └── logging/         # Logging effects for observability (future)
-├── types/               # Type definitions
-├── src/                 # Source files
 │   ├── actions/         # Business logic actions
-│   ├── effects/         # Effect implementations for Node.js
-│   ├── mcp/             # MCP server implementation
-│   │   ├── handlers.ts  # Request handlers
-│   │   └── server-stdio.ts # Server implementation using MCP SDK
-│   ├── types/           # Type definitions
-│   ├── utils/           # Utility functions
-│   └── index.ts         # Main entry point
-├── bin.ts               # CLI entry point
-└── package.json         # Project metadata and dependencies
+│   ├── config/          # Configuration utilities
+│   ├── http/            # HTTP effects for API communication
+│   ├── linear/          # Linear API integration
+│   └── tools/           # MCP tools implementation
+│       ├── types/       # Tool type definitions
+│       └── utils/       # Tool utility functions
+├── main.ts              # Main entry point
+├── deno.json            # Deno configuration
+└── justfile             # Development workflow commands
 ```
 
 ## API Endpoints
 
 The MCP server exposes the following tools:
 
-- `linear-search` - Search Linear issues with a query string
-- `linear-issue` - Get, update, or add comments to Linear issues
+- `hello_world` - Simple test tool to verify the MCP server is working
+- `search_tickets` - Search Linear tickets with filtering and sorting options
 
 ## Contributing
 

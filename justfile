@@ -6,7 +6,7 @@ default:
 
 # Run the development server with file watching
 dev:
-    deno run --watch main.ts
+    deno task dev
 
 # Format code using Deno's formatter (fixes issues)
 fmt *args='':
@@ -29,25 +29,40 @@ ci-check: fmt-check lint check-types test
 # CI checks (use ci-check)
 ci: ci-check
 
-# Only format and lint staged files (pre-commit) with auto-fixing - temporarily simplified for Node.js migration
+# Only format and lint staged files (pre-commit) with auto-fixing
 pre-commit:
     #!/usr/bin/env bash
-    echo "Pre-commit hooks temporarily disabled during Node.js migration"
+    echo "Running pre-commit hooks..."
+    
+    # Get list of staged files
+    STAGED_FILES=$(git diff --staged --name-only --diff-filter=ACMR | grep -E '\.(ts|js|json)$')
+    
+    if [ -n "$STAGED_FILES" ]; then
+        echo "Formatting staged files..."
+        echo "$STAGED_FILES" | xargs deno fmt
+        
+        echo "Linting staged files..."
+        echo "$STAGED_FILES" | grep -E '\.(ts|js)$' | xargs deno lint
+        
+        # Add back formatted files
+        echo "$STAGED_FILES" | xargs git add
+    else
+        echo "No relevant staged files found"
+    fi
 
 # Pre-push hook to ensure CI checks will pass
 pre-push:
     #!/usr/bin/env bash
     echo "Running CI checks before push..."
-    # just ci-check  # Temporarily disabled during Node.js migration
-    echo "CI checks temporarily disabled during Node.js migration"
+    just ci-check
 
-# Run tests with coverage - temporarily disabled for Node.js migration
-test *args='--coverage':
-    @echo "Tests temporarily disabled during Node.js migration"
+# Run tests with coverage
+test *args='':
+    deno test {{args}}
 
 # Check types
 check-types *args='':
-    @echo "Skipping Deno type checking for Node.js migration"
+    deno check main.ts {{args}}
 
 # Setup git hooks
 setup-hooks:
