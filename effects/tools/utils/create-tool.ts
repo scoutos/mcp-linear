@@ -77,7 +77,7 @@ export function create_tool<Context, InputSchema extends z.ZodTypeAny>({
       this.initialize(ctx);
     }
 
-    protected handle: ToolHandler<Context, InputSchema> = async (ctx, args) => {
+    protected handle: ToolHandler<Context, InputSchema> = (ctx, args) => {
       return handler(ctx, args);
     };
   };

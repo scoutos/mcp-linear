@@ -81,7 +81,7 @@ export function createInMemoryHTTP(
 /**
  * Convert a standard Response to our HttpResponse type
  */
-async function createHttpResponse(response: Response): Promise<HttpResponse> {
+function createHttpResponse(response: Response): HttpResponse {
   // Convert headers to a plain object
   const headers: Record<string, string> = {};
   response.headers.forEach((value, key) => {

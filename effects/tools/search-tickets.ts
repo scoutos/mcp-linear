@@ -6,7 +6,7 @@ import { create_tool } from "./utils/mod.ts";
 import type { ToolHandler } from "./types/mod.ts";
 import { HTTPEffect } from "../http/mod.ts";
 import { Config } from "../config/mod.ts";
-import type { SearchResults } from "../linear/types.ts";
+import type {} from "../linear/types.ts";
 import { searchIssues as searchIssuesGraphQL } from "../linear/graphql.ts";
 
 /**

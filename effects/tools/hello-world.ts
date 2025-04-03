@@ -23,7 +23,7 @@ const HelloWorldInputSchema = z.object({
 const handler: ToolHandler<
   HelloWorldContext,
   typeof HelloWorldInputSchema
-> = async (_ctx, { name }) => {
+> = (_ctx, { name }) => {
   return {
     content: [{ type: "text", text: `Hello, ${name}!` }],
   };
