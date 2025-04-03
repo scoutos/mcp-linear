@@ -160,7 +160,9 @@ export async function executeGraphQL<T, V>(
 
     if (result.errors && result.errors.length > 0) {
       throw new GraphQLError(
-        `GraphQL returned errors: ${result.errors[0].message}`,
+        `GraphQL returned errors: ${
+          result.errors[0]?.message || "Unknown error"
+        }`,
         result.errors,
       );
     }

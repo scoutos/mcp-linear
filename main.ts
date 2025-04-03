@@ -1,5 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { McpServer } from "@modelcontextprotocol/sdk";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk";
 import * as tools from "./effects/tools/mod.ts";
 import { getConfig } from "./effects/config/mod.ts";
 import { denoFetch } from "./effects/http/deno-fetch.ts";
@@ -33,8 +33,9 @@ for (const tool of all_tools) {
   server.tool(
     tool.name,
     tool.description,
+    // @ts-ignore - We know the shape exists
     tool.inputSchema.shape,
-    (args) => tool.call(args),
+    (args: unknown) => tool.call(args),
   );
 }
 

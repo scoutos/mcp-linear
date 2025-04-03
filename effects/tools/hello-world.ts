@@ -24,9 +24,9 @@ const handler: ToolHandler<
   HelloWorldContext,
   typeof HelloWorldInputSchema
 > = (_ctx, { name }) => {
-  return {
+  return Promise.resolve({
     content: [{ type: "text", text: `Hello, ${name}!` }],
-  };
+  });
 };
 
 /**

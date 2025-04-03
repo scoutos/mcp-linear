@@ -24,6 +24,7 @@ export abstract class BaseTool<Context, InputSchema extends z.ZodTypeAny> {
     this.name = name;
     this.description = description;
     this.inputSchema = inputSchema;
+    // @ts-ignore - Zod schema has a shape property
     this.shape = inputSchema.shape;
   }
 
