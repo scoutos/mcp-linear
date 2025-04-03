@@ -55,21 +55,21 @@ setup-hooks:
     echo "Setting up git hooks..."
     # Create hooks directory if it doesn't exist
     mkdir -p .git/hooks
-    
+
     # Create pre-commit hook that calls our just pre-commit recipe
     echo '#!/bin/sh
     # Run the pre-commit recipe from justfile
     just pre-commit
     ' > .git/hooks/pre-commit
     chmod +x .git/hooks/pre-commit
-    
+
     # Create pre-push hook that calls our just pre-push recipe
     echo '#!/bin/sh
     # Run the pre-push recipe from justfile
     just pre-push
     ' > .git/hooks/pre-push
     chmod +x .git/hooks/pre-push
-    
+
     echo "Git hooks have been set up successfully"
 
 # Script that should be run after cloning the repository

@@ -2,9 +2,16 @@
 
 ## Philosophy
 
-Our architecture follows a functional approach to the hexagonal architecture pattern, focusing on simplicity and clarity while maintaining strong separation of concerns. This approach moves away from traditional object-oriented concepts like interfaces and abstract classes in favor of simpler TypeScript types and pure functions.
+Our architecture follows a functional approach to the hexagonal architecture
+pattern, focusing on simplicity and clarity while maintaining strong separation
+of concerns. This approach moves away from traditional object-oriented concepts
+like interfaces and abstract classes in favor of simpler TypeScript types and
+pure functions.
 
-We still heavily rely on dependency injection, but implement it through function parameters rather than class constructors. This maintains the benefits of dependency injection (testability, interoperability between providers, clear dependency relationships) while simplifying the implementation.
+We still heavily rely on dependency injection, but implement it through function
+parameters rather than class constructors. This maintains the benefits of
+dependency injection (testability, interoperability between providers, clear
+dependency relationships) while simplifying the implementation.
 
 ## Key Concepts
 
@@ -19,9 +26,11 @@ Effects represent all side-effects and external interactions in our application:
 
 **IMPORTANT: Effects as General Capabilities**
 
-Effects should represent general-purpose capabilities (ports), NOT specific services or domains:
+Effects should represent general-purpose capabilities (ports), NOT specific
+services or domains:
 
 ❌ **INCORRECT**: Creating effects tied to specific services
+
 ```typescript
 // This is incorrect - effects should not be tied to specific services
 type LinearEffect = {
@@ -31,6 +40,7 @@ type LinearEffect = {
 ```
 
 ✅ **CORRECT**: Creating general-purpose effects
+
 ```typescript
 // This is correct - effects represent general capabilities
 type HTTPEffect = {
@@ -43,14 +53,16 @@ type StorageEffect = {
 };
 ```
 
-Service-specific functionality should be built on top of these general effects, implemented in **actions** rather than in effect definitions.
+Service-specific functionality should be built on top of these general effects,
+implemented in **actions** rather than in effect definitions.
 
 **Fundamental Effect Types**
 
 These are examples of truly fundamental effects:
 
 - **HTTPEffect**: Network communication
-- **StorageEffect**: Persistent data storage (could be filesystem, database, etc.)
+- **StorageEffect**: Persistent data storage (could be filesystem, database,
+  etc.)
 - **LoggingEffect**: Logging and observability
 - **TimerEffect**: Time-related operations (delays, scheduling)
 - **RandomEffect**: Randomness/entropy source
@@ -64,13 +76,18 @@ Authentication and configuration are typically better represented as:
 3. OR as pure parameters that are passed to actions, keeping the actions pure
 
 For example, instead of an `AuthEffect`, consider:
+
 - `GetAccessTokenAction` that uses `StorageEffect` and/or `HTTPEffect`
-- Or a utility function that loads and returns authentication details, which are then passed to actions as parameters
+- Or a utility function that loads and returns authentication details, which are
+  then passed to actions as parameters
 
 Similarly, instead of a `ConfigEffect`, consider:
-- A utility function that loads configuration from environment variables or files
+
+- A utility function that loads configuration from environment variables or
+  files
 - A typed configuration object that is passed to actions as a parameter
-- Keeping environment access isolated to these utility functions, not in business logic
+- Keeping environment access isolated to these utility functions, not in
+  business logic
 
 In our project, we use typed configuration objects passed directly to actions:
 
@@ -86,7 +103,7 @@ export function getConfig(): Config {
   if (!linearApiKey) {
     throw new Error("LINEAR_API_KEY environment variable is not set");
   }
-  
+
   return {
     linearApiKey,
   };
@@ -96,11 +113,12 @@ export function getConfig(): Config {
 export const SearchIssuesAction = (effects: { http: HTTPEffect }) => ({
   async execute(query: string, config: Config): Promise<SearchResults> {
     // Use config.linearApiKey with HTTP effect to call Linear API
-  }
+  },
 });
 ```
 
-This approach keeps our actions pure, making them easier to test and reason about.
+This approach keeps our actions pure, making them easier to test and reason
+about.
 
 ### Effect Implementations
 
@@ -127,7 +145,7 @@ export const fileSystemStorage: StorageEffect = {
   async write(key, value) {
     // File system implementation
     await Deno.writeTextFile(key, value);
-  }
+  },
 };
 ```
 
@@ -139,7 +157,7 @@ export const denoFetch: HTTPEffect = {
   async fetch(url, options) {
     // Deno-specific implementation using built-in fetch
     return await fetch(url, options);
-  }
+  },
 };
 ```
 
@@ -193,19 +211,23 @@ export const SearchIssuesAction = (effects: SearchIssuesEffects) => ({
   async execute(query: string, config: Config): Promise<Issue[]> {
     // Configuration is passed explicitly, not accessed from global state
     const apiKey = config.linearApiKey;
-    
+
     // Use generic HTTP effect to make Linear-specific API call
-    const response = await effects.http.fetch("https://api.linear.app/graphql", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+    const response = await effects.http.fetch(
+      "https://api.linear.app/graphql",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query:
+            `{ issues(filter: { search: "${query}" }) { nodes { id title } } }`,
+        }),
       },
-      body: JSON.stringify({
-        query: `{ issues(filter: { search: "${query}" }) { nodes { id title } } }`
-      })
-    });
-    
+    );
+
     const data = await response.json();
     return data.issues.nodes;
   },
@@ -214,15 +236,21 @@ export const SearchIssuesAction = (effects: SearchIssuesEffects) => ({
 
 #### Key Principles for Action Purity
 
-1. **Explicit Configuration**: Any configuration required by an action should be passed explicitly as a parameter, not accessed directly from environment variables or global state.
+1. **Explicit Configuration**: Any configuration required by an action should be
+   passed explicitly as a parameter, not accessed directly from environment
+   variables or global state.
 
-2. **No Side Effects**: Actions should not directly create side effects. All side effects should be performed via effects passed to the action.
+2. **No Side Effects**: Actions should not directly create side effects. All
+   side effects should be performed via effects passed to the action.
 
-3. **Explicit Dependencies**: All dependencies (effects, configuration, etc.) should be explicitly declared in the action's parameters.
+3. **Explicit Dependencies**: All dependencies (effects, configuration, etc.)
+   should be explicitly declared in the action's parameters.
 
-4. **No Global State**: Actions should not access global state like environment variables, global configuration, or singletons directly.
+4. **No Global State**: Actions should not access global state like environment
+   variables, global configuration, or singletons directly.
 
-5. **Deterministic Testing**: Actions should be deterministic and easy to test, with all external influences controllable through parameters.
+5. **Deterministic Testing**: Actions should be deterministic and easy to test,
+   with all external influences controllable through parameters.
 
 ## Dependency Injection
 
@@ -242,17 +270,22 @@ export const GetChatHistoryAction = (effects: GetChatHistoryEffects) => {
 
 Key benefits:
 
-- **Explicit dependencies**: All required effects are clearly defined in the parameter type
-- **Testability**: Easy to substitute real implementations with mocks during testing
-- **Flexibility**: Switch between different providers (e.g., cloud vs. local storage)
-- **Configuration**: Centralize effect implementation selection at the composition root
+- **Explicit dependencies**: All required effects are clearly defined in the
+  parameter type
+- **Testability**: Easy to substitute real implementations with mocks during
+  testing
+- **Flexibility**: Switch between different providers (e.g., cloud vs. local
+  storage)
+- **Configuration**: Centralize effect implementation selection at the
+  composition root
 
 ## Usage Pattern
 
 1. Define effects that represent fundamental external capabilities
 2. Create implementations for those effects for specific technologies
 3. Write actions that depend on effects and contain business logic
-4. Compose actions with specific effect implementations at the application boundary
+4. Compose actions with specific effect implementations at the application
+   boundary
 
 Example composition:
 
@@ -272,7 +305,8 @@ const history = await getChatHistory.execute("chat-123");
 
 ## Testing
 
-This approach simplifies testing by making it easy to provide test implementations:
+This approach simplifies testing by making it easy to provide test
+implementations:
 
 ```typescript
 // effects/storage/in-memory.ts
@@ -287,7 +321,7 @@ export function createInMemoryStorage(): StorageEffect {
     },
     async write(key, value) {
       store.set(key, value);
-    }
+    },
   };
 }
 
@@ -304,7 +338,10 @@ const getChatHistory = GetChatHistoryAction({ storage: testStorage });
 - **Better TypeScript experience**: Types instead of interfaces
 - **More testable**: Pure functions with explicit dependencies
 - **More flexible**: Easier to compose and reuse
-- **Clearer boundaries**: Effects explicitly separate core logic from external concerns
-- **Maintained dependency injection**: Preserves the benefits of DI but with simpler function parameters
+- **Clearer boundaries**: Effects explicitly separate core logic from external
+  concerns
+- **Maintained dependency injection**: Preserves the benefits of DI but with
+  simpler function parameters
 - **Centralized composition**: Clear composition root for wiring up dependencies
-- **Improved provider interoperability**: Easily switch between different cloud/service providers
+- **Improved provider interoperability**: Easily switch between different
+  cloud/service providers

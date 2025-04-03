@@ -2,26 +2,26 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Setup Deno
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: v2.x
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
 
-    - name: Setup Just
-      uses: extractions/setup-just@v1
-      with:
-        just-version: 1.13.0
+      - name: Setup Just
+        uses: extractions/setup-just@v1
+        with:
+          just-version: 1.13.0
 
-    - name: Run CI checks
-      run: just ci-check
+      - name: Run CI checks
+        run: just ci-check

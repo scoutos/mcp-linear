@@ -2,14 +2,17 @@
 
 ## Format
 
-We follow the Conventional Commits specification with scope information when applicable:
+We follow the Conventional Commits specification with scope information when
+applicable:
 
 ```
 <type>(<scope>): <description>
 ```
 
-- `<type>`: Describes the kind of change (e.g., feat, fix, docs, chore, refactor, test, style)
-- `<scope>`: Optional, indicates what area of the codebase is affected (e.g., dx, auth, api)
+- `<type>`: Describes the kind of change (e.g., feat, fix, docs, chore,
+  refactor, test, style)
+- `<scope>`: Optional, indicates what area of the codebase is affected (e.g.,
+  dx, auth, api)
 - `<description>`: A concise description of the changes
 
 ## Types
@@ -33,7 +36,8 @@ Scopes should be used when changes affect a specific area of the codebase:
 - `db`: Database-related changes
 - `tests`: Test-related changes
 
-Omit the scope when a change affects the entire product or doesn't fit into a specific area.
+Omit the scope when a change affects the entire product or doesn't fit into a
+specific area.
 
 ## Examples
 

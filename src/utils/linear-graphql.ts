@@ -14,12 +14,13 @@ export const LINEAR_API_URL = "https://api.linear.app/graphql";
  * GraphQL query for searching issues
  */
 export const SEARCH_ISSUES_QUERY = `
-query SearchIssues($query: String!, $first: Int!) {
-  issues(filter: { search: $query }, first: $first) {
+query SearchIssues($query: String!, $first: Int!, $orderBy: IssueOrder) {
+  issues(filter: { search: $query }, first: $first, orderBy: $orderBy) {
     nodes {
       id
       title
       description
+      priority
       state {
         name
       }
@@ -30,6 +31,7 @@ query SearchIssues($query: String!, $first: Int!) {
         name
         key
       }
+      createdAt
       updatedAt
     }
   }
@@ -41,6 +43,10 @@ query SearchIssues($query: String!, $first: Int!) {
 export type SearchIssuesVariables = {
   query: string;
   first: number;
+  orderBy?: {
+    direction: "ASC" | "DESC";
+    field: "priority" | "createdAt" | "updatedAt" | string;
+  };
 };
 
 /**
@@ -53,6 +59,7 @@ export type SearchIssuesResponse = {
         id: string;
         title?: string;
         description?: string;
+        priority?: number;
         state?: {
           name: string;
         };
@@ -63,6 +70,7 @@ export type SearchIssuesResponse = {
           name: string;
           key: string;
         };
+        createdAt?: string;
         updatedAt?: string;
       }>;
     };
@@ -181,6 +189,8 @@ export async function executeGraphQL<T, V>(
  * @param query Search query string
  * @param config Application configuration with Linear API key
  * @param limit Maximum number of results to return (default: 25)
+ * @param sortBy Field to sort by (default: none)
+ * @param sortDirection Direction to sort (default: ASC)
  * @returns Search results with matching issues
  */
 export async function searchIssues(
@@ -188,12 +198,22 @@ export async function searchIssues(
   query: string,
   config: Config,
   limit = 25,
+  sortBy?: "priority" | "createdAt" | "updatedAt",
+  sortDirection: "ASC" | "DESC" = "ASC",
 ): Promise<SearchResults> {
   try {
     const variables: SearchIssuesVariables = {
       query,
       first: limit,
     };
+
+    // Add sorting if requested
+    if (sortBy) {
+      variables.orderBy = {
+        field: sortBy,
+        direction: sortDirection,
+      };
+    }
 
     const data = await executeGraphQL<
       SearchIssuesResponse["data"],
@@ -209,6 +229,7 @@ export async function searchIssues(
       id: node.id,
       title: node.title,
       description: node.description,
+      priority: node.priority,
       status: node.state?.name,
       assignee: node.assignee
         ? {
@@ -223,6 +244,7 @@ export async function searchIssues(
           key: node.team.key,
         }
         : undefined,
+      createdAt: node.createdAt,
       updatedAt: node.updatedAt,
     }));
 

@@ -11,7 +11,7 @@
     "build": "tsc",
     "prepare": "npm run build",
     "start": "node dist/bin.js",
-    "dev": "ts-node src/bin.ts",
+    "dev": "npx @modelcontextprotocol/inspector ts-node src/main.ts",
     "test": "jest",
     "lint": "eslint src --ext .ts"
   },
@@ -47,6 +47,9 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "cross-fetch": "^3.1.5"
+    "@modelcontextprotocol/sdk": "^1.8.0",
+    "cross-fetch": "^3.1.5",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.5"
   }
 }

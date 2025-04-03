@@ -1,10 +1,12 @@
 # Next Steps for Linear MCP Implementation
 
-This document outlines the plan for implementing the MCP server that integrates with Linear.
+This document outlines the plan for implementing the MCP server that integrates
+with Linear.
 
 ## Current Status
 
 We've made progress on the MCP server implementation:
+
 - Basic server structure is in place
 - HTTP effect and in-memory test implementation exist
 - Response formatters for the MCP protocol are implemented
@@ -13,13 +15,15 @@ We've made progress on the MCP server implementation:
 
 ## Immediate Focus: Additional Linear API Operations
 
-With Linear authentication and issue searching now implemented, our next priority should be to implement the remaining operations:
+With Linear authentication and issue searching now implemented, our next
+priority should be to implement the remaining operations:
 
 1. Getting issue details
 2. Updating issues
 3. Adding comments to issues
 
-These would follow the same patterns we've established with the search functionality:
+These would follow the same patterns we've established with the search
+functionality:
 
 ## Implementation Plan for Remaining Operations
 
@@ -115,4 +119,5 @@ Follow the same pattern used for the search functionality:
   add-comment.test.ts    # Tests for AddCommentAction
 ```
 
-After completing these operations, we'll have a fully functional Linear MCP server with real API integration.
+After completing these operations, we'll have a fully functional Linear MCP
+server with real API integration.

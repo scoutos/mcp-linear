@@ -19,7 +19,8 @@
 
 - Co-locate tests with the code they test
   - Example: `user-service.ts` and `user-service.test.ts`
-- Include cascading `README.md` files alongside code modules if these modules are complex or require additional context
+- Include cascading `README.md` files alongside code modules if these modules
+  are complex or require additional context
 
 ## Architecture Patterns
 
@@ -29,14 +30,19 @@
   - Implement effects with concrete implementations for specific technologies
   - Use pure functions for business logic in actions
   - Use in-memory implementations for testing purposes
-- Leverage functional programming principles and dependency injection for testable components
-- This architecture reduces vendor lock-in, increases maintainability, and simplifies code
+- Leverage functional programming principles and dependency injection for
+  testable components
+- This architecture reduces vendor lock-in, increases maintainability, and
+  simplifies code
 
 ## Testing
 
 - Tests should be co-located with the code they test
 - Test files should follow the naming pattern: `{filename}.test.{extension}`
 - Each unit test should focus on a single responsibility
-- Unit tests for **actions** should assert that **effects** are called with the correct arguments
-- Unit tests for **effect implementations** should mock any clients and assert that the clients are called with the correct arguments
-- Write acceptance tests for user-facing features, test these as a user when possible
+- Unit tests for **actions** should assert that **effects** are called with the
+  correct arguments
+- Unit tests for **effect implementations** should mock any clients and assert
+  that the clients are called with the correct arguments
+- Write acceptance tests for user-facing features, test these as a user when
+  possible

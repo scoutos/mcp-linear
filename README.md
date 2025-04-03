@@ -1,17 +1,20 @@
 # Linear MCP Server
 
-A Deno 2.0 implementation of an MCP server for Linear integration.
+A Node.js implementation of an MCP server for Linear integration.
 
 ## About
 
-This MCP (Model Context Protocol) server provides a standardized interface for AI models to interact with Linear issue tracking functionality. It follows the Actions and Effects architecture pattern for clear separation of concerns and testability.
+This MCP (Model Context Protocol) server provides a standardized interface for
+AI models to interact with Linear issue tracking functionality. It follows the
+Actions and Effects architecture pattern for clear separation of concerns and
+testability.
 
 ### Key Features
 
-- Standard MCP protocol implementation for Linear 
+- Standard MCP protocol implementation for Linear using the official MCP SDK
 - Support for searching issues, reading details, updating, and commenting
 - Clean architecture following functional programming principles
-- Runs standalone without requiring Deno installation
+- Pure Node.js implementation for broad compatibility
 
 ## Getting Started
 
@@ -35,22 +38,10 @@ npm install -g @scoutos/mcp-linear
 mcp-linear
 ```
 
-#### Option 2: Using Deno
-
-If you have Deno installed:
-
-```bash
-# Run directly without installation
-deno run --allow-env --allow-stdio https://deno.land/x/mcp_linear/main.ts
-
-# Or install and run
-deno install --allow-env --allow-stdio -n mcp-linear https://deno.land/x/mcp_linear/main.ts
-mcp-linear
-```
-
 ### Usage with Claude Desktop
 
-Add the following to your Claude Desktop configuration file (typically at `~/.config/Claude Desktop/claude_desktop_config.json`):
+Add the following to your Claude Desktop configuration file (typically at
+`~/.config/Claude Desktop/claude_desktop_config.json`):
 
 ```json
 {
@@ -112,94 +103,46 @@ To verify your setup:
 
 ## Development
 
-This project uses [Deno 2.0](https://docs.deno.com) and [just](https://github.com/casey/just) for development workflow.
+This project uses Node.js and TypeScript for development.
 
 ### Prerequisites
 
-- [Deno 2.0](https://docs.deno.com)
-- [just](https://github.com/casey/just)
+- Node.js (v18+)
+- npm
 
 ### First-time Setup
 
 After cloning the repository, run:
 
 ```bash
-just post-clone
+npm install
 ```
-
-This will set up the required git hooks to ensure consistent code quality.
 
 ### Available Commands
 
 ```bash
-# List all available commands
-just
-
-# Run the development server with file watching
-just dev
+# Start the development server with file watching
+npm run dev
 
 # Start the server
-deno task start
+npm start
 
-# Format code
-just fmt
-
-# Lint code
-just lint
-
-# Format and lint all files
-just check
+# Build the project
+npm run build
 
 # Run tests
-just test
-# or
-deno task test
+npm test
 
-# Check types
-just check-types
-
-# Set up git hooks (runs automatically from post-clone)
-just setup-hooks
+# Run linting
+npm run lint
 ```
 
-### Developer Experience
+### Integrations and Dependencies
 
-This project includes:
-
-- Pre-commit hooks to automatically format and lint staged files
-- Deno's built-in formatter and linter
-- Type checking through Deno
-
-### Building for Distribution
-
-#### Building the npm Package
-
-To build the package for npm distribution:
-
-```bash
-# Create a standalone executable
-deno compile --allow-net --allow-env --output dist/mcp-linear main.ts
-
-# Package for npm distribution
-# This requires additional configuration in a package.json file
-```
-
-The binary will be available in the `dist` directory and can be published to npm.
-
-#### Publishing to Deno Land
-
-To make the package available via `deno.land/x`:
-
-```bash
-# Ensure all tests pass
-just test
-
-# Tag a new version
-git tag v0.1.0
-git push --tags
-```
-
-Then submit the module to `deno.land/x` following their contribution guidelines.
+- Uses
+  [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk)
+  for MCP implementation
+- Linear API integration via GraphQL
 
 ## Project Structure
 
@@ -207,25 +150,34 @@ Then submit the module to `deno.land/x` following their contribution guidelines.
 /
 ├── effects/             # Core effect definitions and implementations
 │   ├── http/            # HTTP effects for API communication
-│   ├── storage/         # Storage effects for data persistence
-│   └── logging/         # Logging effects for observability
+│   ├── storage/         # Storage effects for data persistence (future)
+│   └── logging/         # Logging effects for observability (future)
 ├── types/               # Type definitions
-├── token-sources/       # Token source implementations
-├── actions/             # Business logic actions
-├── mcp/                 # MCP server implementation
-│   ├── server.ts        # Core server implementation
-│   └── server.test.ts   # Server tests
-├── main.ts              # Application entry point
-└── main.test.ts         # Main application tests
+├── src/                 # Source files
+│   ├── actions/         # Business logic actions
+│   ├── effects/         # Effect implementations for Node.js
+│   ├── mcp/             # MCP server implementation
+│   │   ├── handlers.ts  # Request handlers
+│   │   └── server-stdio.ts # Server implementation using MCP SDK
+│   ├── types/           # Type definitions
+│   ├── utils/           # Utility functions
+│   └── index.ts         # Main entry point
+├── bin.ts               # CLI entry point
+└── package.json         # Project metadata and dependencies
 ```
 
 ## API Endpoints
 
-The MCP server exposes the following endpoints:
+The MCP server exposes the following tools:
 
-- `GET /mcp` - Server information
-- `GET /mcp/tools` - List available tools
-- `POST /mcp/tools/linear-search` - Search Linear issues
-- `GET /mcp/tools/linear-issue/{id}` - Get issue details
-- `PUT /mcp/tools/linear-issue/{id}` - Update an issue
-- `POST /mcp/tools/linear-issue/{id}/comment` - Add a comment to an issue
+- `linear-search` - Search Linear issues with a query string
+- `linear-issue` - Get, update, or add comments to Linear issues
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for
+details.
