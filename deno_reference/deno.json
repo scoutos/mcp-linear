@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-env --allow-net --watch main.ts",
+    "start": "deno run --allow-env --allow-net main.ts",
+    "test": "deno test --allow-env",
+    "lint": "deno lint",
+    "fmt": "deno fmt"
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.223.0/"
+  }
+}
