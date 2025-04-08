@@ -109,6 +109,7 @@ async function main() {
     const all_tools = [
       new tools.ListTickets(toolContext),
       new tools.GetTicket(toolContext),
+      new tools.ListMembers(toolContext),
     ];
 
     // Register tools with the MCP server

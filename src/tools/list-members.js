@@ -32,15 +32,35 @@ const ListMembersInputSchema = z.object({
 });
 
 /**
+ * Extended user schema with additional fields
+ */
+const ExtendedUserSchema = UserSchema.extend({
+  displayName: z.string().optional(),
+  active: z.boolean().optional(),
+  // Add timestamps
+  createdAt: z.union([z.string(), z.date()]).optional(),
+  updatedAt: z.union([z.string(), z.date()]).optional(),
+  lastSeen: z.union([z.string(), z.date()]).optional(),
+  // Add role/status information
+  admin: z.boolean().optional(),
+  isMe: z.boolean().optional(),
+  role: z.string().optional(),
+  // Organization membership status
+  organizationMembership: z
+    .object({
+      id: z.string(),
+      owner: z.boolean().optional(),
+      member: z.boolean().optional(),
+      guest: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+/**
  * Member search results schema
  */
 const MemberSearchResultsSchema = z.object({
-  results: z.array(
-    UserSchema.extend({
-      displayName: z.string().optional(),
-      active: z.boolean().optional(),
-    })
-  ),
+  results: z.array(ExtendedUserSchema),
 });
 
 /**
@@ -118,12 +138,62 @@ async function listMembers(client, filters = {}, { limit = 25 } = {}, logger) {
     // Convert to our schema format
     const members = await Promise.all(
       filteredUsers.map(async user => {
+        // Get organization membership details if available
+        let organizationMembership = undefined;
+        try {
+          // @ts-ignore - The Linear SDK types may not include this property
+          if (user.organizationMembership) {
+            // If it's a promise, await it
+            // @ts-ignore - Handle potential promise
+            const membership =
+              // @ts-ignore - Check for promise
+              typeof user.organizationMembership.then === 'function'
+                ? // @ts-ignore - Await the promise
+                  await user.organizationMembership
+                : // @ts-ignore - Or use directly
+                  user.organizationMembership;
+
+            if (membership) {
+              organizationMembership = {
+                id: membership.id,
+                owner: membership.owner || false,
+                member: membership.member || false,
+                guest: membership.guest || false,
+              };
+              logger?.debug(`Found membership details for user: ${user.name}`);
+            }
+          }
+        } catch (membershipError) {
+          logger?.warn(
+            `Error fetching membership data: ${membershipError.message}`
+          );
+        }
+
+        // Format timestamps to be consistent
+        const formatDate = timestamp => {
+          if (!timestamp) return undefined;
+          return new Date(timestamp).toISOString();
+        };
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           displayName: user.displayName || user.name,
           active: user.active === false ? false : true, // Default to active if not explicitly false
+          // Add timestamps
+          createdAt: formatDate(user.createdAt),
+          updatedAt: formatDate(user.updatedAt),
+          lastSeen: formatDate(user.lastSeen),
+          // Add role information
+          // @ts-ignore - The Linear SDK types may not include these properties
+          admin: user.admin || false,
+          // @ts-ignore - The Linear SDK types may not include these properties
+          isMe: user.isMe || false,
+          // @ts-ignore - The Linear SDK types may not include these properties
+          role: user.role || 'unknown',
+          // Add organization membership details
+          organizationMembership,
         };
       })
     );
@@ -211,6 +281,27 @@ const handler = async (ctx, { teamId, nameFilter, limit, debug }) => {
       responseText = 'Members found:\n\n';
 
       results.results.forEach((member, index) => {
+        // Format dates for display
+        const formatDisplayDate = timestamp => {
+          if (!timestamp) return 'Not available';
+          try {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+          } catch (e) {
+            return 'Invalid date';
+          }
+        };
+
+        // Determine member type
+        let memberType = 'Regular user';
+        if (member.organizationMembership) {
+          if (member.organizationMembership.owner) memberType = 'Owner';
+          else if (member.organizationMembership.guest) memberType = 'Guest';
+          else if (member.organizationMembership.member) memberType = 'Member';
+        }
+        if (member.admin) memberType += ' (Admin)';
+        if (member.isMe) memberType += ' (You)';
+
         responseText += `${index + 1}. ${member.displayName}\n`;
         responseText += `   ID: ${member.id}\n`;
         responseText += `   Username: ${member.name}\n`;
@@ -220,6 +311,23 @@ const handler = async (ctx, { teamId, nameFilter, limit, debug }) => {
         }
 
         responseText += `   Status: ${member.active ? 'Active' : 'Inactive'}\n`;
+        responseText += `   Role: ${
+          member.role !== 'unknown' ? member.role : memberType
+        }\n`;
+
+        // Add timestamps
+        responseText += `   Created: ${formatDisplayDate(member.createdAt)}\n`;
+        if (member.updatedAt) {
+          responseText += `   Updated: ${formatDisplayDate(
+            member.updatedAt
+          )}\n`;
+        }
+        if (member.lastSeen) {
+          responseText += `   Last seen: ${formatDisplayDate(
+            member.lastSeen
+          )}\n`;
+        }
+
         responseText += '\n';
       });
     }
