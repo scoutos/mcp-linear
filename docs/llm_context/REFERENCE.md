@@ -29,6 +29,8 @@ MCP Key Concepts:
 
 - [Linear API Documentation](https://developers.linear.app/docs) - Official
   Linear API documentation for integrating with Linear
+- [Linear SDK Documentation](https://developers.linear.app/docs/sdk/fetching-and-modifying-data) - 
+  Documentation for using the Linear JavaScript/TypeScript SDK
 - [Linear GraphQL API Explorer](https://developers.linear.app/docs/graphql/working-with-the-graphql-api) -
   Tool for exploring and testing Linear's GraphQL API
 
@@ -46,6 +48,19 @@ Linear API Key Concepts:
   requests
 - API keys should be stored securely as environment variables, not hardcoded in
   source code
+
+### Linear SDK Key Concepts
+
+- The Linear SDK is a TypeScript/JavaScript wrapper around the GraphQL API
+- SDK functions return promises that resolve to the requested data
+- Many fields in the response are also promises (like user, assignee, team)
+- To access these fields, you need to await them separately:
+  ```javascript
+  const issue = await client.issue('ISSUE_ID');
+  const assignee = await issue.assignee; // Assignee is a promise that needs to be awaited
+  ```
+- SDK methods often return collections with a `nodes` array containing the results
+- The SDK uses a builder pattern for constructing GraphQL queries
 
 ### Example Linear GraphQL Queries
 

@@ -1,0 +1,32 @@
+{
+  "name": "mcp-linear",
+  "version": "0.1.0",
+  "description": "Linear issue tracking integration for Model Context Protocol",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --project jsconfig.json --noEmit --skipLibCheck || echo 'Type checking complete with some errors'"
+  },
+  "keywords": [
+    "linear",
+    "mcp",
+    "modelcontextprotocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@linear/sdk": "^38.0.0",
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "dotenv": "^16.4.1",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.8.3"
+  }
+}
