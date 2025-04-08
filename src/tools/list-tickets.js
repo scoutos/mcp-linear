@@ -26,6 +26,7 @@ const ListTicketsInputSchema = z.object({
   assignedToMe: z.boolean().default(false),
   assignee: z.string().optional(),
   status: z.string().optional(),
+  project: z.string().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt']).default('createdAt'),
   sortDirection: z.enum(['ASC', 'DESC']).default('DESC'),
   limit: z.number().min(1).max(100).default(25),
@@ -40,6 +41,7 @@ const ListTicketsInputSchema = z.object({
  * @param {boolean} [filters.assignedToMe=false] - Only show tickets assigned to me
  * @param {string} [filters.assignee] - Filter by assignee identifier
  * @param {string} [filters.status] - Filter by status name
+ * @param {string} [filters.project] - Filter by project name
  * @param {Object} options - Search options
  * @param {number} [options.limit=25] - Maximum number of results to return
  * @param {'priority' | 'createdAt' | 'updatedAt'} [options.sortBy] - Field to sort by
@@ -73,11 +75,18 @@ async function listIssues(
       filter.assignee = { name: { eq: filters.assignee } };
     }
 
-    // Add status filter - this is where the fix is needed!
+    // Add status filter
     if (filters.status) {
       // Properly filter by state name
       filter.state = { name: { eq: filters.status } };
       logger?.debug(`Filtering by state name: ${filters.status}`);
+    }
+
+    // Add project filter
+    if (filters.project) {
+      // Filter by project name
+      filter.project = { name: { eq: filters.project } };
+      logger?.debug(`Filtering by project name: ${filters.project}`);
     }
 
     logger?.debug('Built filter object:', JSON.stringify(filter, null, 2));
@@ -184,12 +193,30 @@ async function listIssues(
           );
         }
 
+        // Get project if present (it's a promise in the Linear SDK)
+        let projectData = undefined;
+        try {
+          if (issue.project) {
+            const project = await issue.project;
+            if (project) {
+              projectData = {
+                id: project.id,
+                name: project.name,
+              };
+              logger?.debug(`Found project: ${project.name}`);
+            }
+          }
+        } catch (projectError) {
+          logger?.warn(`Error fetching project data: ${projectError.message}`);
+        }
+
         const processedIssue = IssueSchema.parse({
           id: issue.id,
           title: issue.title,
           description: issue.description || undefined,
           priority: issue.priority,
           assignee: assigneeData,
+          project: projectData,
           status: statusName,
           createdAt: issue.createdAt,
           updatedAt: issue.updatedAt,
@@ -240,7 +267,16 @@ async function listIssues(
  */
 const handler = async (
   ctx,
-  { assignedToMe, assignee, status, sortBy, sortDirection, limit, debug }
+  {
+    assignedToMe,
+    assignee,
+    status,
+    project,
+    sortBy,
+    sortDirection,
+    limit,
+    debug,
+  }
 ) => {
   const logger = ctx.effects.logger;
 
@@ -250,6 +286,7 @@ const handler = async (
       assignedToMe,
       assignee,
       status,
+      project,
       sortBy,
       sortDirection,
       limit,
@@ -281,6 +318,7 @@ const handler = async (
         assignedToMe,
         assignee,
         status,
+        project,
       },
       {
         limit,
@@ -314,14 +352,28 @@ const handler = async (
 
         const priority = issue.priority ?? 0;
 
+        // Format timestamps to be more readable
+        const formatDate = timestamp => {
+          if (!timestamp) return 'Unknown';
+          const date = new Date(timestamp);
+          return date.toLocaleString();
+        };
+
         responseText += `${index + 1}. ${issue.title || 'Untitled'}\n`;
         responseText += `   ID: ${issue.id}\n`;
         responseText += `   Status: ${issue.status || 'Unknown'}\n`;
         responseText += `   Priority: ${priorityMap[priority] || 'Unknown'}\n`;
 
+        if (issue.project) {
+          responseText += `   Project: ${issue.project.name}\n`;
+        }
+
         if (issue.assignee) {
           responseText += `   Assignee: ${issue.assignee.name}\n`;
         }
+
+        responseText += `   Created: ${formatDate(issue.createdAt)}\n`;
+        responseText += `   Updated: ${formatDate(issue.updatedAt)}\n`;
 
         responseText += '\n';
       });
@@ -347,6 +399,7 @@ const handler = async (
 - assignedToMe: ${assignedToMe}
 - assignee: ${assignee || '<not specified>'}
 - status: ${status || '<not specified>'}
+- project: ${project || '<not specified>'}
 - sortBy: ${sortBy}
 - sortDirection: ${sortDirection}
 - limit: ${limit}`;
@@ -411,7 +464,7 @@ For manual testing, try using the SDK directly or the Linear API Explorer in the
 export const ListTickets = create_tool({
   name: 'list_tickets',
   description:
-    'List Linear tickets with filtering by assignee and status. Use this instead of search when you just want to browse tickets without a search query.',
+    'List Linear tickets with filtering by assignee, status, and project. Use this instead of search when you just want to browse tickets without a search query.',
   inputSchema: ListTicketsInputSchema,
   handler,
 });

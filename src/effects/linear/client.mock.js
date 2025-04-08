@@ -31,6 +31,11 @@ export function createMockLinearClient(options = {}) {
         name: 'Mock User',
         email: 'mock@example.com',
       }),
+      // Project is also a promise in the SDK
+      project: Promise.resolve({
+        id: 'project-1',
+        name: 'Main Project',
+      }),
     },
     {
       id: 'mock-issue-2',
@@ -43,6 +48,11 @@ export function createMockLinearClient(options = {}) {
       updatedAt: new Date('2023-01-04'),
       // No assignee for this issue
       assignee: Promise.resolve(null),
+      // Project is also a promise in the SDK
+      project: Promise.resolve({
+        id: 'project-2',
+        name: 'Secondary Project',
+      }),
     },
   ];
 
@@ -84,6 +94,18 @@ export function createMockLinearClient(options = {}) {
         nodesToReturn = nodesToReturn.filter(node => {
           // In a real implementation, this would be handled by the Linear API
           return node.state.then(state => state.name === stateName);
+        });
+      }
+
+      // If we have a project filter, apply it
+      if (params.filter?.project?.name?.eq) {
+        const projectName = params.filter.project.name.eq;
+        // Check our mock data - since we know the structure, we can filter directly
+        nodesToReturn = nodesToReturn.filter(node => {
+          // In a real implementation, this would be handled by the Linear API
+          return node.project.then(
+            project => project && project.name === projectName
+          );
         });
       }
 

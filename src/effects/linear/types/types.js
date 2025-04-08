@@ -42,6 +42,14 @@ export const CommentSchema = z.object({
 });
 
 /**
+ * Linear project schema
+ */
+export const ProjectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+/**
  * Linear issue schema
  */
 export const IssueSchema = z.object({
@@ -52,6 +60,7 @@ export const IssueSchema = z.object({
   priority: z.number().optional(),
   labels: z.array(LabelSchema).optional(),
   assignee: UserSchema.optional(),
+  project: ProjectSchema.optional(),
   comments: z.array(CommentSchema).optional(),
   createdAt: z.union([z.string(), z.date()]).optional(),
   updatedAt: z.union([z.string(), z.date()]).optional(),
@@ -94,6 +103,10 @@ export const CommentCreateRequestSchema = z.object({
 
 /**
  * @typedef {z.infer<typeof TeamSchema>} Team
+ */
+
+/**
+ * @typedef {z.infer<typeof ProjectSchema>} Project
  */
 
 /**
