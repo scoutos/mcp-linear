@@ -74,7 +74,7 @@ export function createMockLinearClient(options = {}) {
     _calls: {
       issues: [],
       issue: [],
-      issueCreate: [],
+      createIssue: [],
     },
 
     /**
@@ -226,14 +226,14 @@ export function createMockLinearClient(options = {}) {
     },
 
     /**
-     * Mock implementation of issueCreate method
+     * Mock implementation of createIssue method
      *
      * @param {Object} issueInput - Issue creation parameters
      * @returns {Promise<{issue: Promise<Object>}>} Created issue
      */
-    issueCreate(issueInput) {
+    createIssue(issueInput) {
       // Record the call for test assertions
-      this._calls.issueCreate.push(issueInput);
+      this._calls.createIssue.push(issueInput);
 
       // Check for required fields
       if (!issueInput.title || !issueInput.teamId) {

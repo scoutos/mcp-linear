@@ -20,7 +20,7 @@ To create a new issue in Linear:
 
 ```javascript
 // ✅ CORRECT
-const issueResult = await client.issueCreate({
+const issueResult = await client.createIssue({
   title: "Issue title",
   teamId: "TEAM_ID", 
   description: "Description text",
@@ -34,6 +34,7 @@ const issueResult = await client.issueCreate({
 const issueData = await issueResult.issue;
 
 // ❌ INCORRECT - This method does not exist
+// const issueResult = await client.issueCreate({...});
 // const issueResult = await client.issues.create({...});
 ```
 
@@ -109,7 +110,7 @@ const currentUser = await client.viewer;
 ### Adding Comments
 
 ```javascript
-const commentResult = await client.commentCreate({
+const commentResult = await client.createComment({
   issueId: "ISSUE_ID",
   body: "Comment text"
 });
@@ -138,7 +139,8 @@ const commentNodes = comments.nodes;
 ## Common Errors
 
 1. **Method Not Found**: Ensure you're using the correct method names and structure
-   - Example: Use `client.issueCreate()` not `client.issues.create()`
+   - Example: Use `client.createIssue()` not `client.issueCreate()` or `client.issues.create()`
+   - Methods use the camelCase pattern `create[EntityName]()` (createIssue, createComment, etc.)
 
 2. **Missing Required Fields**: Check required fields for each operation
    - For issue creation: `title` and `teamId` are required
@@ -162,7 +164,7 @@ describe('Linear SDK Integration', () => {
   });
   
   test('creating an issue works', async () => {
-    const result = await client.issueCreate({
+    const result = await client.createIssue({
       title: 'Test Issue',
       teamId: 'TEAM_ID',
       description: 'Test description'
@@ -178,3 +180,4 @@ describe('Linear SDK Integration', () => {
 
 - [Linear SDK Documentation](https://developers.linear.app/docs/sdk/getting-started)
 - [Linear API Reference](https://developers.linear.app/docs/graphql/working-with-the-graphql-api)
+- [Linear SDK Mutations](https://developers.linear.app/docs/sdk/fetching-and-modifying-data#mutations)
