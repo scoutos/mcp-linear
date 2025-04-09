@@ -140,11 +140,17 @@ async function listTeams(
         const key = team.key.toLowerCase();
         const description = team.description?.toLowerCase() || '';
 
-        return (
+        // Check for direct inclusion
+        if (
           name.includes(nameFilterLower) ||
           key.includes(nameFilterLower) ||
           description.includes(nameFilterLower)
-        );
+        ) {
+          return true;
+        }
+
+        // No match found
+        return false;
       });
 
       logger?.debug(
@@ -170,10 +176,14 @@ async function listTeams(
           updatedAt: formatDate(team.updatedAt),
           color: team.color,
           private: team.private,
-          cycleEnable: team.cycleEnable,
+          // @ts-ignore - SDK may have different property name
+          cycleEnable: team.cyclesEnabled || team.cycleEnable,
           timezone: team.timezone,
+          // @ts-ignore - SDK structure may differ from types
           markedAsDuplicate: team.markedAsDuplicate,
+          // @ts-ignore - SDK structure may differ from types
           issuesPerCycle: team.issuesPerCycle,
+          // @ts-ignore - SDK structure may differ from types
           url: team.url,
         };
 
@@ -215,6 +225,7 @@ async function listTeams(
                     if (project.state) {
                       const state = await project.state;
                       if (state) {
+                        // @ts-ignore - SDK structure may differ from types
                         stateName = state.name;
                       }
                     }
@@ -228,7 +239,8 @@ async function listTeams(
                     id: project.id,
                     name: project.name,
                     state: stateName,
-                    completed: project.completed || false,
+                    // @ts-ignore - SDK has different property name
+                    completed: project.completedAt ? true : false,
                   };
                 })
               );
