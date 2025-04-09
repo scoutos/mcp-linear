@@ -147,6 +147,67 @@ For a specific test file:
 npm test -- src/path/to/test.js
 ```
 
+## Integration Tests for External SDK Usage
+
+### Problem Statement
+
+We recently experienced an issue where our code attempted to use `client.issueCreate()` when the Linear SDK actually requires `client.issues.create()`. This type of error is not caught by simple unit tests because our mock implementations don't enforce the same interface as the real SDK.
+
+This issue could have been avoided with either:
+1. Full TypeScript implementation (would catch at compile time)
+2. Integration tests that exercise the actual SDK methods
+
+Since we want to avoid adding a build step that TypeScript would require, we need to implement proper integration tests.
+
+### Integration Test Plan
+
+1. **Create a dedicated integration test directory**:
+   ```
+   /tests/integration/linear-sdk/
+   ```
+
+2. **Set up testing with a Linear sandbox account**:
+   - Create a dedicated Linear workspace for testing
+   - Generate a test API key with limited permissions
+   - Store the API key in environment variables for CI
+
+3. **Implement SDK method contract tests**:
+   - Create a test for each method we use from the Linear SDK
+   - Verify the method exists and has the expected signature
+   - Perform minimal API calls that validate our understanding
+
+4. **Structure tests by functionality**:
+   ```javascript
+   // tests/integration/linear-sdk/issues.test.js
+   describe('Linear SDK Issues', () => {
+     it('should list issues with client.issues.list()', async () => {
+       // Test list() method exists and works
+     });
+     
+     it('should create issues with client.issues.create()', async () => {
+       // Test create() method exists and works
+     });
+   });
+   ```
+
+5. **Implement CI skip for most runs**:
+   - Run integration tests manually during development
+   - Run automatically on PRs that modify SDK interaction code
+   - Skip for routine PRs that don't modify SDK-related files
+
+6. **Create a reference guide**:
+   - Document correct SDK method calls
+   - Include real examples from our integration tests
+   - Maintain in `docs/llm_context/LINEAR-SDK-REFERENCE.md`
+
+### Implementation Timeline
+
+1. Set up Linear sandbox account and test API key (1 day)
+2. Create basic integration test framework (1 day)
+3. Implement tests for current SDK usage (2 days)
+4. Update CI configuration for integration tests (1 day)
+5. Create reference documentation (1 day)
+
 ## Best Practices
 
 1. **Isolate tests**: Each test should be independent and not rely on state from other tests
@@ -154,6 +215,8 @@ npm test -- src/path/to/test.js
 3. **Test edge cases**: Include tests for error conditions and unexpected inputs
 4. **Keep assertions focused**: Test one aspect of behavior per test case
 5. **Use descriptive test names**: Make it clear what functionality is being tested
+6. **Verify SDK contracts**: Ensure mock implementations match actual SDK interfaces
+7. **Run integration tests during development**: Verify SDK understanding with real calls
 
 ## Sample Test File
 
