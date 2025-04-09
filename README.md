@@ -157,11 +157,15 @@ To verify your setup:
 
 The MCP server exposes the following tools:
 
-- `list_tickets` - List Linear tickets with various filtering options (assignee, status, etc.)
-- `get_ticket` - Get detailed information about a specific Linear ticket by ID
+- `list_issues` - List Linear issues (also called tickets) with various filtering options (assignee, status, etc.)
+- `get_issue` - Get detailed information about a specific Linear issue by ID
 - `list_members` - List Linear team members with optional filtering by name
 - `list_projects` - List Linear projects with optional filtering by team, name, and archive status
-- `add_comment` - Add a comment to a specific Linear ticket
+- `add_comment` - Add a comment to a specific Linear issue
+
+For backward compatibility, the following tool aliases are also available:
+- `list_tickets` - Alias for `list_issues`
+- `get_ticket` - Alias for `get_issue`
 
 ## Troubleshooting
 

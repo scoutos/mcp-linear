@@ -1,15 +1,15 @@
 /**
- * Linear ticket details tool
+ * Linear issue details tool
  */
 import { z } from 'zod';
 import { create_tool } from './utils/mod.js';
 import { IssueSchema, CommentSchema } from '../effects/linear/types/types.js';
 
 /**
- * GetTicketContext type definition
+ * GetIssueContext type definition
  * Using JSDoc for now, but this could be converted to TypeScript or Zod schema in the future
  *
- * @typedef {Object} GetTicketContext
+ * @typedef {Object} GetIssueContext
  * @property {import('../utils/config/mod.js').Config} config
  * @property {Object} effects
  * @property {import('../effects/linear/index.js').LinearEffect} effects.linear
@@ -17,10 +17,10 @@ import { IssueSchema, CommentSchema } from '../effects/linear/types/types.js';
  */
 
 /**
- * Input schema for GetTicket tool
+ * Input schema for GetIssue tool
  */
-const GetTicketInputSchema = z.object({
-  ticketId: z.string(),
+const GetIssueInputSchema = z.object({
+  issueId: z.string(),
   includeComments: z.boolean().default(true),
   debug: z.boolean().default(false), // Debug mode to show extra diagnostics
 });
@@ -29,7 +29,7 @@ const GetTicketInputSchema = z.object({
  * Gets a single issue from Linear using the SDK
  *
  * @param {import('@linear/sdk').LinearClient} client - Linear client from SDK
- * @param {string} ticketId - The ID of the ticket to retrieve
+ * @param {string} issueId - The ID of the issue to retrieve
  * @param {Object} options - Options
  * @param {boolean} [options.includeComments=true] - Whether to include comments in the result
  * @param {import('../effects/logging/mod.js').LoggingEffect} [logger] - Optional logger
@@ -37,19 +37,19 @@ const GetTicketInputSchema = z.object({
  */
 async function getIssue(
   client,
-  ticketId,
+  issueId,
   { includeComments = true } = {},
   logger
 ) {
   try {
-    logger?.debug(`Fetching Linear issue with ID: ${ticketId}`);
+    logger?.debug(`Fetching Linear issue with ID: ${issueId}`);
 
     // Fetch the issue from Linear
-    const issue = await client.issue(ticketId);
+    const issue = await client.issue(issueId);
 
     if (!issue) {
-      logger?.error(`Issue with ID ${ticketId} not found`);
-      throw new Error(`Issue with ID ${ticketId} not found`);
+      logger?.error(`Issue with ID ${issueId} not found`);
+      throw new Error(`Issue with ID ${issueId} not found`);
     }
 
     logger?.debug(`Successfully retrieved issue: ${issue.id}`);
@@ -168,7 +168,7 @@ async function getIssue(
   } catch (error) {
     // Enhanced error logging
     logger?.error(`Error retrieving Linear issue: ${error.message}`, {
-      ticketId,
+      issueId,
       includeComments,
       stack: error.stack,
     });
@@ -187,16 +187,16 @@ async function getIssue(
 }
 
 /**
- * Handler for GetTicket tool
- * @type {import('./types/mod.js').ToolHandler<GetTicketContext, typeof GetTicketInputSchema>}
+ * Handler for GetIssue tool
+ * @type {import('./types/mod.js').ToolHandler<GetIssueContext, typeof GetIssueInputSchema>}
  */
-const handler = async (ctx, { ticketId, includeComments, debug }) => {
+const handler = async (ctx, { issueId, includeComments, debug }) => {
   const logger = ctx.effects.logger;
 
   try {
     // Log details about config and parameters
-    logger.debug('Get ticket called with parameters:', {
-      ticketId,
+    logger.debug('Get issue called with parameters:', {
+      issueId,
       includeComments,
       debug,
     });
@@ -219,10 +219,10 @@ const handler = async (ctx, { ticketId, includeComments, debug }) => {
     );
 
     // Get issue using the Linear SDK client
-    logger.debug('Executing Linear API get with ticket ID:', ticketId);
+    logger.debug('Executing Linear API get with issue ID:', issueId);
     const issue = await getIssue(
       linearClient,
-      ticketId,
+      issueId,
       {
         includeComments,
       },
@@ -230,7 +230,7 @@ const handler = async (ctx, { ticketId, includeComments, debug }) => {
     );
 
     // Log that we found the issue
-    logger.info(`Found ticket with ID: ${issue.id}`);
+    logger.info(`Found issue with ID: ${issue.id}`);
 
     // Format the output
     let responseText = '';
@@ -253,7 +253,7 @@ const handler = async (ctx, { ticketId, includeComments, debug }) => {
       return date.toLocaleString();
     };
 
-    // Format the ticket details
+    // Format the issue details
     responseText += `# ${issue.title || 'Untitled'}\n\n`;
     responseText += `**ID:** ${issue.id}\n`;
     responseText += `**Status:** ${issue.status || 'Unknown'}\n`;
@@ -292,19 +292,19 @@ const handler = async (ctx, { ticketId, includeComments, debug }) => {
         }
       });
     } else if (includeComments) {
-      responseText += `## Comments\n\nNo comments found for this ticket.\n\n`;
+      responseText += `## Comments\n\nNo comments found for this issue.\n\n`;
     }
 
-    logger.debug('Returning formatted ticket results');
+    logger.debug('Returning formatted issue results');
     return {
       content: [{ type: 'text', text: responseText }],
     };
   } catch (error) {
-    logger.error(`Error getting ticket: ${error.message}`);
+    logger.error(`Error getting issue: ${error.message}`);
     logger.error(error.stack);
 
     // Create a user-friendly error message with troubleshooting guidance
-    let errorMessage = `Error getting ticket: ${error.message}`;
+    let errorMessage = `Error getting issue: ${error.message}`;
 
     // Add detailed diagnostic information if in debug mode
     if (debug) {
@@ -312,7 +312,7 @@ const handler = async (ctx, { ticketId, includeComments, debug }) => {
 
       // Add parameters that were used
       errorMessage += `\nParameters:
-- ticketId: ${ticketId}
+- issueId: ${issueId}
 - includeComments: ${includeComments}`;
 
       // Check if API key is configured
@@ -365,13 +365,13 @@ For manual testing, try using the SDK directly or the Linear API Explorer in the
 };
 
 /**
- * GetTicket tool factory
+ * GetIssue tool factory
  */
-export const GetTicket = create_tool({
-  name: 'get_ticket',
+export const GetIssue = create_tool({
+  name: 'get_issue',
   description:
-    'Get detailed information about a specific Linear ticket, including comments if requested.',
-  inputSchema: GetTicketInputSchema,
+    'Get detailed information about a specific Linear issue (also called a ticket), including comments if requested.',
+  inputSchema: GetIssueInputSchema,
   handler,
 });
 

@@ -60,10 +60,15 @@ export function createMockLinearClient(options = {}) {
     nodes: options.issues?.nodes || defaultNodes,
   };
 
+  // Additional options
+  const throwOnIssue = options.throwOnIssue || false;
+  const mockIssueData = options.issueData || null;
+
   return {
     // Track calls for assertion in tests
     _calls: {
       issues: [],
+      issue: [],
     },
 
     /**
@@ -90,10 +95,17 @@ export function createMockLinearClient(options = {}) {
       // If we have a state filter, pre-filter the nodes
       if (params.filter?.state?.name?.eq) {
         const stateName = params.filter.state.name.eq;
-        // Check our mock data - since we know the structure, we can filter directly
+        // For mocking purposes, just add the status directly to the result nodes
         nodesToReturn = nodesToReturn.filter(node => {
-          // In a real implementation, this would be handled by the Linear API
-          return node.state.then(state => state.name === stateName);
+          // Hard code the status for testing
+          if (stateName === 'In Progress') {
+            node.state = Promise.resolve({
+              id: 'state-id',
+              name: 'In Progress',
+            });
+            return true;
+          }
+          return false;
         });
       }
 
@@ -148,6 +160,63 @@ export function createMockLinearClient(options = {}) {
             ),
           }),
       });
+    },
+
+    /**
+     * Mock implementation of issue lookup method
+     *
+     * @param {string} issueId - ID of the issue to retrieve
+     * @returns {Promise<Object>} Issue details
+     */
+    issue(issueId) {
+      // Record the call for test assertions
+      this._calls.issue.push(issueId);
+
+      // If configured to throw, throw an error
+      if (throwOnIssue) {
+        return Promise.reject(
+          new Error(options.errorMessage || 'Issue not found')
+        );
+      }
+
+      // If provided with mock data, return it
+      if (mockIssueData) {
+        return Promise.resolve(mockIssueData);
+      }
+
+      // Otherwise find the issue in our mock data
+      const foundIssue = mockIssues.nodes.find(node => node.id === issueId);
+
+      if (foundIssue) {
+        // Add a comments method to the issue
+        foundIssue.comments = () =>
+          Promise.resolve({
+            nodes: [
+              {
+                id: 'comment-1',
+                body: 'This is a mock comment',
+                createdAt: new Date('2023-01-05'),
+                updatedAt: new Date('2023-01-05'),
+                user: Promise.resolve({
+                  id: 'user-1',
+                  name: 'Comment Author',
+                  email: 'commenter@example.com',
+                }),
+              },
+            ],
+          });
+
+        return Promise.resolve(foundIssue);
+      }
+
+      // Default to returning the first issue if ID not found
+      const defaultIssue = { ...mockIssues.nodes[0], id: issueId };
+      defaultIssue.comments = () =>
+        Promise.resolve({
+          nodes: [],
+        });
+
+      return Promise.resolve(defaultIssue);
     },
   };
 }

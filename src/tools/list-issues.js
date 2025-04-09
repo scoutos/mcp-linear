@@ -1,5 +1,5 @@
 /**
- * Linear ticket listing tool
+ * Linear issue listing tool
  */
 import { z } from 'zod';
 import { create_tool } from './utils/mod.js';
@@ -9,10 +9,10 @@ import {
 } from '../effects/linear/types/types.js';
 
 /**
- * ListTicketsContext type definition
+ * ListIssuesContext type definition
  * Using JSDoc for now, but this could be converted to TypeScript or Zod schema in the future
  *
- * @typedef {Object} ListTicketsContext
+ * @typedef {Object} ListIssuesContext
  * @property {import('../utils/config/mod.js').Config} config
  * @property {Object} effects
  * @property {import('../effects/linear/index.js').LinearEffect} effects.linear
@@ -20,9 +20,9 @@ import {
  */
 
 /**
- * Input schema for ListTickets tool
+ * Input schema for ListIssues tool
  */
-const ListTicketsInputSchema = z.object({
+const ListIssuesInputSchema = z.object({
   assignedToMe: z.boolean().default(false),
   assignee: z.string().optional(),
   status: z.string().optional(),
@@ -38,7 +38,7 @@ const ListTicketsInputSchema = z.object({
  *
  * @param {import('@linear/sdk').LinearClient} client - Linear client from SDK
  * @param {Object} filters - Filter criteria
- * @param {boolean} [filters.assignedToMe=false] - Only show tickets assigned to me
+ * @param {boolean} [filters.assignedToMe=false] - Only show issues assigned to me
  * @param {string} [filters.assignee] - Filter by assignee identifier
  * @param {string} [filters.status] - Filter by status name
  * @param {string} [filters.project] - Filter by project name
@@ -121,20 +121,20 @@ async function listIssues(
     let result;
 
     try {
-      // First try using the viewer API which may be more reliable for getting assigned tickets
+      // First try using the viewer API which may be more reliable for getting assigned issues
       if (filters.assignedToMe) {
         logger?.debug(
-          'Using viewer.assignedIssues API for retrieving assigned tickets'
+          'Using viewer.assignedIssues API for retrieving assigned issues'
         );
         const me = await client.viewer;
         result = await me.assignedIssues(searchParams);
-        logger?.debug('Successfully retrieved tickets using viewer API');
+        logger?.debug('Successfully retrieved issues using viewer API');
       } else {
         // Otherwise use the direct GraphQL API from Linear SDK
-        logger?.debug('Using issues API for general ticket search');
+        logger?.debug('Using issues API for general issue search');
         // @ts-ignore - The Linear SDK types are not accurate for the GraphQL API
         result = await client.issues(queryParams);
-        logger?.debug('Successfully retrieved tickets using issues API');
+        logger?.debug('Successfully retrieved issues using issues API');
       }
     } catch (error) {
       logger?.error(`Linear API error:`, error);
@@ -262,8 +262,8 @@ async function listIssues(
 }
 
 /**
- * Handler for ListTickets tool
- * @type {import('./types/mod.js').ToolHandler<ListTicketsContext, typeof ListTicketsInputSchema>}
+ * Handler for ListIssues tool
+ * @type {import('./types/mod.js').ToolHandler<ListIssuesContext, typeof ListIssuesInputSchema>}
  */
 const handler = async (
   ctx,
@@ -282,7 +282,7 @@ const handler = async (
 
   try {
     // Log details about config and parameters
-    logger.debug('List tickets called with parameters:', {
+    logger.debug('List issues called with parameters:', {
       assignedToMe,
       assignee,
       status,
@@ -329,7 +329,7 @@ const handler = async (
     );
 
     // Log the results count
-    logger.info(`Found ${results.results.length} tickets matching criteria`);
+    logger.info(`Found ${results.results.length} issues matching criteria`);
 
     // Format the output
     let responseText = '';
@@ -337,9 +337,9 @@ const handler = async (
     logger.info(`Result: ${JSON.stringify(results, null, 2)}`);
 
     if (results.results.length === 0) {
-      responseText = 'No tickets found matching your criteria.';
+      responseText = 'No issues found matching your criteria.';
     } else {
-      responseText = 'Tickets found:\n\n';
+      responseText = 'Issues found:\n\n';
 
       results.results.forEach((issue, index) => {
         const priorityMap = {
@@ -384,11 +384,11 @@ const handler = async (
       content: [{ type: 'text', text: responseText }],
     };
   } catch (error) {
-    logger.error(`Error listing tickets: ${error.message}`);
+    logger.error(`Error listing issues: ${error.message}`);
     logger.error(error.stack);
 
     // Create a user-friendly error message with troubleshooting guidance
-    let errorMessage = `Error listing tickets: ${error.message}`;
+    let errorMessage = `Error listing issues: ${error.message}`;
 
     // Add detailed diagnostic information if in debug mode
     if (debug) {
@@ -441,11 +441,6 @@ For manual testing, try using the SDK directly or the Linear API Explorer in the
       errorMessage += `\n\nFor more detailed diagnostics, retry with debug:true in the input.`;
     }
 
-    // No need to restore log level as it's not used
-    // if (debug && logger.setLevel) {
-    //  logger.setLevel(oldLogLevel);
-    // }
-
     return {
       content: [
         {
@@ -459,13 +454,13 @@ For manual testing, try using the SDK directly or the Linear API Explorer in the
 };
 
 /**
- * ListTickets tool factory
+ * ListIssues tool factory
  */
-export const ListTickets = create_tool({
-  name: 'list_tickets',
+export const ListIssues = create_tool({
+  name: 'list_issues',
   description:
-    'List Linear tickets with filtering by assignee, status, and project. Use this instead of search when you just want to browse tickets without a search query.',
-  inputSchema: ListTicketsInputSchema,
+    'List Linear issues (also called tickets) with filtering by assignee, status, and project. Use this to browse and find issues in your Linear workspace.',
+  inputSchema: ListIssuesInputSchema,
   handler,
 });
 

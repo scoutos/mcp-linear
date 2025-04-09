@@ -107,10 +107,11 @@ async function main() {
 
     // Initialize tools with context
     const all_tools = [
-      new tools.ListTickets(toolContext),
-      new tools.GetTicket(toolContext),
+      new tools.ListIssues(toolContext),
+      new tools.GetIssue(toolContext),
       new tools.ListMembers(toolContext),
       new tools.ListProjects(toolContext),
+      new tools.AddComment(toolContext),
     ];
 
     // Register tools with the MCP server
