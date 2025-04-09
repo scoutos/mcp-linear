@@ -111,6 +111,8 @@ async function main() {
       new tools.GetIssue(toolContext),
       new tools.ListMembers(toolContext),
       new tools.ListProjects(toolContext),
+      new tools.GetProject(toolContext),
+      new tools.ListTeams(toolContext),
       new tools.AddComment(toolContext),
       new tools.CreateIssue(toolContext),
     ];

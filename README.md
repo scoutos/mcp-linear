@@ -161,6 +161,8 @@ The MCP server exposes the following tools:
 - `get_issue` - Get detailed information about a specific Linear issue by ID
 - `list_members` - List Linear team members with optional filtering by name
 - `list_projects` - List Linear projects with optional filtering by team, name, and archive status
+- `get_project` - Get detailed information about a specific Linear project including issues, members and more
+- `list_teams` - List Linear teams with details about their members, projects, and issues
 - `add_comment` - Add a comment to a specific Linear issue
 - `create_issue` - Create a new issue in Linear with customizable title, description, priority, and assignee
 
