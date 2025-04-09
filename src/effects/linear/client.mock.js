@@ -11,6 +11,10 @@
  * @param {Object} options - Options for configuring the mock client
  * @param {Object} [options.issues] - Mock issues configuration
  * @param {Array} [options.issues.nodes] - Mock issue nodes to return from searches
+ * @param {boolean} [options.throwOnIssue] - Whether to throw an error when issue is called
+ * @param {boolean} [options.throwOnIssueCreate] - Whether to throw an error when issueCreate is called
+ * @param {Object} [options.issueData] - Mock issue data to return
+ * @param {string} [options.errorMessage] - Custom error message to use when throwing
  * @returns {Object} Mock Linear client that partially implements the LinearClient interface
  */
 export function createMockLinearClient(options = {}) {
@@ -62,6 +66,7 @@ export function createMockLinearClient(options = {}) {
 
   // Additional options
   const throwOnIssue = options.throwOnIssue || false;
+  const throwOnIssueCreate = options.throwOnIssueCreate || false;
   const mockIssueData = options.issueData || null;
 
   return {
@@ -69,6 +74,7 @@ export function createMockLinearClient(options = {}) {
     _calls: {
       issues: [],
       issue: [],
+      issueCreate: [],
     },
 
     /**
@@ -217,6 +223,77 @@ export function createMockLinearClient(options = {}) {
         });
 
       return Promise.resolve(defaultIssue);
+    },
+
+    /**
+     * Mock implementation of issueCreate method
+     *
+     * @param {Object} issueInput - Issue creation parameters
+     * @returns {Promise<{issue: Promise<Object>}>} Created issue
+     */
+    issueCreate(issueInput) {
+      // Record the call for test assertions
+      this._calls.issueCreate.push(issueInput);
+
+      // Check for required fields
+      if (!issueInput.title || !issueInput.teamId) {
+        return Promise.reject(
+          new Error('Missing required fields: title and teamId are required')
+        );
+      }
+
+      // Use options to configure errors if needed
+      if (throwOnIssueCreate) {
+        return Promise.reject(
+          new Error(options.errorMessage || 'Issue creation failed')
+        );
+      }
+
+      // Create a mock issue with the input data
+      const mockIssue = {
+        id: 'mock-created-issue-id',
+        title: issueInput.title,
+        description: issueInput.description || null,
+        priority: issueInput.priority !== undefined ? issueInput.priority : 0,
+        // State is a promise in the SDK
+        state: Promise.resolve({
+          id: issueInput.stateId || 'state-backlog',
+          name: issueInput.stateId ? 'In Progress' : 'Backlog',
+        }),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Add assignee if provided
+      if (issueInput.assigneeId) {
+        mockIssue.assignee = Promise.resolve({
+          id: issueInput.assigneeId,
+          name: 'Mock Assignee',
+          email: 'assignee@example.com',
+        });
+      } else {
+        mockIssue.assignee = Promise.resolve(null);
+      }
+
+      // Add project if provided
+      if (issueInput.projectId) {
+        mockIssue.project = Promise.resolve({
+          id: issueInput.projectId,
+          name: 'Mock Project',
+        });
+      } else {
+        mockIssue.project = Promise.resolve(null);
+      }
+
+      // Add comments method to the issue
+      mockIssue.comments = () =>
+        Promise.resolve({
+          nodes: [],
+        });
+
+      return Promise.resolve({
+        issue: Promise.resolve(mockIssue),
+      });
     },
   };
 }

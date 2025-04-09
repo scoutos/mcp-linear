@@ -162,6 +162,7 @@ The MCP server exposes the following tools:
 - `list_members` - List Linear team members with optional filtering by name
 - `list_projects` - List Linear projects with optional filtering by team, name, and archive status
 - `add_comment` - Add a comment to a specific Linear issue
+- `create_issue` - Create a new issue in Linear with customizable title, description, priority, and assignee
 
 For backward compatibility, the following tool aliases are also available:
 - `list_tickets` - Alias for `list_issues`

@@ -112,6 +112,7 @@ async function main() {
       new tools.ListMembers(toolContext),
       new tools.ListProjects(toolContext),
       new tools.AddComment(toolContext),
+      new tools.CreateIssue(toolContext),
     ];
 
     // Register tools with the MCP server
