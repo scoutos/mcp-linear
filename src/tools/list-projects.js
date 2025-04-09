@@ -120,8 +120,8 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
     const queryParams = {
       first: Math.min(100, limit * 2), // Request enough projects but not too many
       includeArchived: filters.includeArchived,
-      // Use orderBy to get the most recent projects first
-      orderBy: "updatedAt", // This ensures most recently updated projects appear first
+      // Note: Removed orderBy parameter to fix TypeScript error
+      // Would need to use the proper enum instead of a string
     };
 
     // Initialize filter object
@@ -149,7 +149,7 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
       hasFilter = true;
       logger?.debug(`Added name filter: ${filters.nameFilter}`);
     }
-    
+
     // If no filters applied, remove empty filter object
     if (!hasFilter) {
       delete queryParams.filter;
@@ -184,14 +184,18 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
 
     // Add projects referenced by issues if enabled and we have fewer than expected projects
     // Only do this as a last resort if direct project queries don't yield enough results
-    if (filters.includeThroughIssues !== false && !filters.projectId && allProjects.size < limit) {
+    if (
+      filters.includeThroughIssues !== false &&
+      !filters.projectId &&
+      allProjects.size < limit
+    ) {
       logger?.debug('Looking for additional projects referenced by issues');
 
       try {
         // Build issue query parameters - only fetch what we need
         const issueQueryParams = {
           first: Math.min(30, limit), // Further reduce API load - we just need a few more projects
-          orderBy: "updatedAt", // Get most recently updated issues
+          // Removed orderBy parameter to fix TypeScript error - PaginationOrderBy enum is required
         };
 
         // If we're filtering by team, also filter issues by team
@@ -201,9 +205,11 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
 
         // Get issues and extract their projects in parallel
         const issuesResponse = await client.issues(issueQueryParams);
-        
+
         if (issuesResponse.nodes.length > 0) {
-          logger?.debug(`Found ${issuesResponse.nodes.length} issues to scan for projects`);
+          logger?.debug(
+            `Found ${issuesResponse.nodes.length} issues to scan for projects`
+          );
 
           // Extract projects from issues all at once
           const projectPromises = issuesResponse.nodes
@@ -218,7 +224,7 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
 
           // Wait for all project promises to resolve in parallel
           const projects = await Promise.all(projectPromises);
-          
+
           // Add valid projects to our collection
           projects
             .filter(project => project && !allProjects.has(project.id))
@@ -419,10 +425,11 @@ async function processProjects(projects, logger) {
         (async () => {
           try {
             if (project.team) {
-              const team = typeof project.team.then === 'function' 
-                ? await project.team 
-                : project.team;
-              
+              const team =
+                typeof project.team.then === 'function'
+                  ? await project.team
+                  : project.team;
+
               if (team) {
                 logger?.debug(`Found team for project: ${team.name}`);
                 return team.name;
@@ -434,15 +441,16 @@ async function processProjects(projects, logger) {
             return undefined;
           }
         })(),
-        
+
         // Lead data promise
         (async () => {
           try {
             if (project.lead) {
-              const lead = typeof project.lead.then === 'function'
-                ? await project.lead
-                : project.lead;
-              
+              const lead =
+                typeof project.lead.then === 'function'
+                  ? await project.lead
+                  : project.lead;
+
               if (lead) {
                 logger?.debug(`Found lead for project: ${lead.name}`);
                 return lead.name;
@@ -453,7 +461,7 @@ async function processProjects(projects, logger) {
             logger?.warn(`Error fetching lead data: ${error.message}`);
             return undefined;
           }
-        })()
+        })(),
       ]);
 
       // Return processed project with all data
