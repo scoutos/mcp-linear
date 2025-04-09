@@ -90,13 +90,15 @@ describe('getIssue', () => {
 
   it('should handle tickets with no assignee', async () => {
     // Create mock Linear client with custom behavior
-    const client = createMockLinearClient({
-      issueData: {
-        id: 'TEST-123',
-        title: 'Test Issue',
-        assignee: null, // No assignee
-      },
-    });
+    const client = createMockLinearClient(
+      /** @type {any} */ {
+        issueData: {
+          id: 'TEST-123',
+          title: 'Test Issue',
+          assignee: null, // No assignee
+        },
+      }
+    );
     const logger = createMockLogger();
 
     // Call the function
@@ -113,10 +115,12 @@ describe('getIssue', () => {
 
   it('should throw an error when ticket is not found', async () => {
     // Create mock Linear client with custom error behavior
-    const client = createMockLinearClient({
-      throwOnIssue: true,
-      errorMessage: 'Issue not found',
-    });
+    const client = createMockLinearClient(
+      /** @type {any} */ {
+        throwOnIssue: true,
+        errorMessage: 'Issue not found',
+      }
+    );
     const logger = createMockLogger();
 
     // Call the function and expect it to throw
@@ -124,7 +128,8 @@ describe('getIssue', () => {
       async () => {
         await getIssue(client, 'NONEXISTENT', {}, logger);
       },
-      error => error.message.includes('not found'),
+      /** @param {any} error */
+      error => error.message && error.message.includes('not found'),
       'Should throw an error for non-existent issues'
     );
 

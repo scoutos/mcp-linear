@@ -23,6 +23,8 @@ test('createIssue with minimal parameters', async () => {
   const mockLogger = {
     debug: mock.fn(),
     error: mock.fn(),
+    info: mock.fn(),
+    warn: mock.fn(),
   };
 
   // Mock client
@@ -39,11 +41,18 @@ test('createIssue with minimal parameters', async () => {
   const title = 'Test Issue';
   const teamId = 'team-123';
 
-  const result = await createIssue(mockClient, title, teamId, {}, mockLogger);
+  const result = await createIssue(
+    /** @type {any} */ (mockClient),
+    title,
+    teamId,
+    {},
+    /** @type {any} */ (mockLogger)
+  );
 
   // Assert the mock was called with correct parameters
   assert.strictEqual(mockClient.issueCreate.mock.calls.length, 1);
-  assert.deepStrictEqual(mockClient.issueCreate.mock.calls[0].arguments[0], {
+  const args = mockClient.issueCreate.mock.calls[0]?.arguments || [{}];
+  assert.deepStrictEqual(args[0], {
     title,
     teamId,
   });
@@ -88,6 +97,8 @@ test('createIssue with all parameters', async () => {
   const mockLogger = {
     debug: mock.fn(),
     error: mock.fn(),
+    info: mock.fn(),
+    warn: mock.fn(),
   };
 
   // Mock client
@@ -112,16 +123,17 @@ test('createIssue with all parameters', async () => {
   };
 
   const result = await createIssue(
-    mockClient,
+    /** @type {any} */ (mockClient),
     title,
     teamId,
     options,
-    mockLogger
+    /** @type {any} */ (mockLogger)
   );
 
   // Assert the mock was called with correct parameters
   assert.strictEqual(mockClient.issueCreate.mock.calls.length, 1);
-  assert.deepStrictEqual(mockClient.issueCreate.mock.calls[0].arguments[0], {
+  const args = mockClient.issueCreate.mock.calls[0]?.arguments || [{}];
+  assert.deepStrictEqual(args[0], {
     title,
     teamId,
     description: 'Test Description',
@@ -153,6 +165,8 @@ test('createIssue handles errors', async () => {
   const mockLogger = {
     debug: mock.fn(),
     error: mock.fn(),
+    info: mock.fn(),
+    warn: mock.fn(),
   };
 
   // Mock client that throws an error
@@ -168,7 +182,13 @@ test('createIssue handles errors', async () => {
 
   // Assert that the function throws
   await assert.rejects(async () => {
-    await createIssue(mockClient, title, teamId, {}, mockLogger);
+    await createIssue(
+      /** @type {any} */ (mockClient),
+      title,
+      teamId,
+      {},
+      mockLogger
+    );
   }, /Mock API Error/);
 
   // Assert that the logger was called
