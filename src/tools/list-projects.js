@@ -159,35 +159,38 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
       }
     }
 
-    // Get all projects regardless of team
-    logger?.debug(
-      'Querying all projects with params:',
-      JSON.stringify(queryParams, null, 2)
-    );
-
-    try {
-      // @ts-ignore - The Linear SDK types may not be fully accurate
-      const projectsResponse = await client.projects(queryParams);
+    // Skip fetching all projects if we're just looking up by ID
+    if (!filters.projectId) {
+      // Get all projects regardless of team
       logger?.debug(
-        `Found ${projectsResponse.nodes.length} projects from direct query`
+        'Querying all projects with params:',
+        JSON.stringify(queryParams, null, 2)
       );
 
-      // Add all projects to our collection
-      for (const project of projectsResponse.nodes) {
-        allProjects.set(project.id, project);
+      try {
+        // @ts-ignore - The Linear SDK types may not be fully accurate
+        const projectsResponse = await client.projects(queryParams);
+        logger?.debug(
+          `Found ${projectsResponse.nodes.length} projects from direct query`
+        );
+
+        // Add all projects to our collection
+        for (const project of projectsResponse.nodes) {
+          allProjects.set(project.id, project);
+        }
+      } catch (projectsError) {
+        logger?.warn(`Error fetching projects: ${projectsError.message}`);
       }
-    } catch (projectsError) {
-      logger?.warn(`Error fetching projects: ${projectsError.message}`);
     }
 
     // Add projects referenced by issues if enabled
-    if (filters.includeThroughIssues !== false) {
+    if (filters.includeThroughIssues !== false && !filters.projectId) {
       logger?.debug('Looking for projects referenced by issues');
 
       try {
-        // Build issue query parameters
+        // Build issue query parameters - only fetch what we need
         const issueQueryParams = {
-          first: 100, // Get a good sample of issues
+          first: Math.min(50, limit * 2), // Reduce from 100 to a more reasonable number based on limit
         };
 
         // If we're filtering by team, also filter issues by team
@@ -202,25 +205,32 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
           `Found ${issuesResponse.nodes.length} issues to scan for projects`
         );
 
-        // Extract projects from issues
-        for (const issue of issuesResponse.nodes) {
-          if (issue.project) {
+        // Extract projects from issues - use Promise.all to parallelize the fetches
+        const projectPromises = issuesResponse.nodes
+          .filter(issue => issue.project) // Only process issues with project references
+          .map(async issue => {
             try {
-              const project = await issue.project;
-              if (project && !allProjects.has(project.id)) {
-                // Only process if we don't already have this project
-                allProjects.set(project.id, project);
-                logger?.debug(
-                  `Found additional project from issue: ${project.name} (${project.id})`
-                );
-              }
+              return await issue.project;
             } catch (projectError) {
               logger?.warn(
                 `Error fetching project from issue: ${projectError.message}`
               );
+              return null;
             }
-          }
-        }
+          });
+
+        // Wait for all project promises to resolve in parallel
+        const projects = await Promise.all(projectPromises);
+        
+        // Add valid projects to our collection
+        projects
+          .filter(project => project && !allProjects.has(project.id))
+          .forEach(project => {
+            allProjects.set(project.id, project);
+            logger?.debug(
+              `Found additional project from issue: ${project.name} (${project.id})`
+            );
+          });
       } catch (issuesError) {
         logger?.warn(`Error fetching issues: ${issuesError.message}`);
       }
@@ -398,53 +408,59 @@ function filterProjectsByName(projects, nameFilter, fuzzyMatch = true, logger) {
  * @returns {Promise<Array>} Processed projects
  */
 async function processProjects(projects, logger) {
+  // Format timestamps to be consistent (used for all projects)
+  const formatDate = timestamp => {
+    if (!timestamp) return undefined;
+    return new Date(timestamp).toISOString();
+  };
+
+  // Process each project in parallel
   return Promise.all(
     projects.map(async project => {
-      let teamName = undefined;
-      let leadName = undefined;
-
-      // Get team information if available
-      try {
-        if (project.team) {
-          // If it's a promise, await it
-          const team =
-            typeof project.team.then === 'function'
-              ? await project.team
-              : project.team;
-
-          if (team) {
-            teamName = team.name;
-            logger?.debug(`Found team for project: ${teamName}`);
+      // Fetch team and lead data in parallel instead of sequentially
+      const [teamData, leadData] = await Promise.all([
+        // Team data promise
+        (async () => {
+          try {
+            if (project.team) {
+              const team = typeof project.team.then === 'function' 
+                ? await project.team 
+                : project.team;
+              
+              if (team) {
+                logger?.debug(`Found team for project: ${team.name}`);
+                return team.name;
+              }
+            }
+            return undefined;
+          } catch (error) {
+            logger?.warn(`Error fetching team data: ${error.message}`);
+            return undefined;
           }
-        }
-      } catch (teamError) {
-        logger?.warn(`Error fetching team data: ${teamError.message}`);
-      }
-
-      // Get lead information if available
-      try {
-        if (project.lead) {
-          // If it's a promise, await it
-          const lead =
-            typeof project.lead.then === 'function'
-              ? await project.lead
-              : project.lead;
-
-          if (lead) {
-            leadName = lead.name;
-            logger?.debug(`Found lead for project: ${leadName}`);
+        })(),
+        
+        // Lead data promise
+        (async () => {
+          try {
+            if (project.lead) {
+              const lead = typeof project.lead.then === 'function'
+                ? await project.lead
+                : project.lead;
+              
+              if (lead) {
+                logger?.debug(`Found lead for project: ${lead.name}`);
+                return lead.name;
+              }
+            }
+            return undefined;
+          } catch (error) {
+            logger?.warn(`Error fetching lead data: ${error.message}`);
+            return undefined;
           }
-        }
-      } catch (leadError) {
-        logger?.warn(`Error fetching lead data: ${leadError.message}`);
-      }
+        })()
+      ]);
 
-      // Format timestamps to be consistent
-      const formatDate = timestamp => {
-        if (!timestamp) return undefined;
-        return new Date(timestamp).toISOString();
-      };
-
+      // Return processed project with all data
       return {
         id: project.id,
         name: project.name,
@@ -462,10 +478,10 @@ async function processProjects(projects, logger) {
         archived: project.archived || false,
         // Add team information
         teamId: project.teamId,
-        teamName: teamName,
+        teamName: teamData,
         // Add lead information
         leadId: project.leadId,
-        leadName: leadName,
+        leadName: leadData,
         // Add metrics
         memberIds: project.memberIds || [],
         issueCount: project.issueCount || 0,
