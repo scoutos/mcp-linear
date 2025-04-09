@@ -29,9 +29,11 @@ test('createIssue with minimal parameters', async () => {
 
   // Mock client
   const mockClient = {
-    issueCreate: mock.fn(async () => ({
-      issue: Promise.resolve(mockIssueData),
-    })),
+    issues: {
+      create: mock.fn(async () => ({
+        issue: Promise.resolve(mockIssueData),
+      })),
+    },
     _calls: {
       issueCreate: [],
     },
@@ -50,8 +52,8 @@ test('createIssue with minimal parameters', async () => {
   );
 
   // Assert the mock was called with correct parameters
-  assert.strictEqual(mockClient.issueCreate.mock.calls.length, 1);
-  const args = mockClient.issueCreate.mock.calls[0]?.arguments || [{}];
+  assert.strictEqual(mockClient.issues.create.mock.calls.length, 1);
+  const args = mockClient.issues.create.mock.calls[0]?.arguments || [{}];
   assert.deepStrictEqual(args[0], {
     title,
     teamId,
@@ -103,9 +105,11 @@ test('createIssue with all parameters', async () => {
 
   // Mock client
   const mockClient = {
-    issueCreate: mock.fn(async () => ({
-      issue: Promise.resolve(mockIssueData),
-    })),
+    issues: {
+      create: mock.fn(async () => ({
+        issue: Promise.resolve(mockIssueData),
+      })),
+    },
     _calls: {
       issueCreate: [],
     },
@@ -131,8 +135,8 @@ test('createIssue with all parameters', async () => {
   );
 
   // Assert the mock was called with correct parameters
-  assert.strictEqual(mockClient.issueCreate.mock.calls.length, 1);
-  const args = mockClient.issueCreate.mock.calls[0]?.arguments || [{}];
+  assert.strictEqual(mockClient.issues.create.mock.calls.length, 1);
+  const args = mockClient.issues.create.mock.calls[0]?.arguments || [{}];
   assert.deepStrictEqual(args[0], {
     title,
     teamId,
@@ -171,9 +175,11 @@ test('createIssue handles errors', async () => {
 
   // Mock client that throws an error
   const mockClient = {
-    issueCreate: mock.fn(async () => {
-      throw new Error('Mock API Error');
-    }),
+    issues: {
+      create: mock.fn(async () => {
+        throw new Error('Mock API Error');
+      }),
+    },
   };
 
   // Call the function
@@ -192,6 +198,6 @@ test('createIssue handles errors', async () => {
   }, /Mock API Error/);
 
   // Assert that the logger was called
-  assert.strictEqual(mockClient.issueCreate.mock.calls.length, 1);
+  assert.strictEqual(mockClient.issues.create.mock.calls.length, 1);
   assert.strictEqual(mockLogger.error.mock.calls.length, 1);
 });

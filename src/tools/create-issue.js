@@ -92,7 +92,8 @@ async function createIssue(client, title, teamId, options = {}, logger) {
     logger?.debug('Issue creation payload:', issueInput);
 
     // Create the issue using the Linear SDK
-    const issueResult = await client.issueCreate(issueInput);
+    // Note: The correct method is issues.create, not issueCreate
+    const issueResult = await client.issues.create(issueInput);
 
     if (!issueResult) {
       throw new Error('Failed to create issue, received null response');
