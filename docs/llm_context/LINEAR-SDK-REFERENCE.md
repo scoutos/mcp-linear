@@ -20,7 +20,7 @@ To create a new issue in Linear:
 
 ```javascript
 // ✅ CORRECT
-const issueResult = await client.issues.create({
+const issueResult = await client.issueCreate({
   title: "Issue title",
   teamId: "TEAM_ID", 
   description: "Description text",
@@ -34,7 +34,7 @@ const issueResult = await client.issues.create({
 const issueData = await issueResult.issue;
 
 // ❌ INCORRECT - This method does not exist
-// const issueResult = await client.issueCreate({...});
+// const issueResult = await client.issues.create({...});
 ```
 
 ### Getting Issues
@@ -138,7 +138,7 @@ const commentNodes = comments.nodes;
 ## Common Errors
 
 1. **Method Not Found**: Ensure you're using the correct method names and structure
-   - Example: Use `client.issues.create()` not `client.issueCreate()`
+   - Example: Use `client.issueCreate()` not `client.issues.create()`
 
 2. **Missing Required Fields**: Check required fields for each operation
    - For issue creation: `title` and `teamId` are required
@@ -162,7 +162,7 @@ describe('Linear SDK Integration', () => {
   });
   
   test('creating an issue works', async () => {
-    const result = await client.issues.create({
+    const result = await client.issueCreate({
       title: 'Test Issue',
       teamId: 'TEAM_ID',
       description: 'Test description'
