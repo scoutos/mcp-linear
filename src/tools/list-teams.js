@@ -390,7 +390,9 @@ const handler = async (
       };
 
       results.results.forEach((team, index) => {
-        responseText += `${index + 1}. **${team.name}** (${team.key})\n`;
+        responseText += `${index + 1}. **${team.name}** (${team.key}) [ID: ${
+          team.id
+        }]\n`;
 
         if (team.description) {
           responseText += `   Description: ${team.description}\n`;

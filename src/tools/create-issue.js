@@ -23,6 +23,7 @@ const CreateIssueInputSchema = z.object({
   title: z.string().describe('The title of the issue to create'),
   teamId: z
     .string()
+    .min(1, { message: 'Team ID is required' })
     .describe('The ID of the Linear team where the issue will be created'),
   description: z
     .string()

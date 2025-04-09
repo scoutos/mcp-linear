@@ -602,8 +602,7 @@ const handler = async (
         // Format completion percentage
         const progressPercent = Math.round(project.progress * 100);
 
-        responseText += `${index + 1}. ${project.name}\n`;
-        responseText += `   ID: ${project.id}\n`;
+        responseText += `${index + 1}. ${project.name} [ID: ${project.id}]\n`;
 
         if (project.description) {
           // Truncate description to keep output manageable
