@@ -116,48 +116,47 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
       }
     }
 
-    // Build query parameters for projects() method
+    // Build query parameters for projects() method with all possible filters
     const queryParams = {
-      first: 100, // Request more projects to ensure we get a good sample
+      first: Math.min(100, limit * 2), // Request enough projects but not too many
       includeArchived: filters.includeArchived,
+      // Use orderBy to get the most recent projects first
+      orderBy: "updatedAt", // This ensures most recently updated projects appear first
     };
+
+    // Initialize filter object
+    queryParams.filter = {};
+    let hasFilter = false;
 
     // Apply state filter if provided
     if (filters.state && filters.state !== 'all') {
-      // @ts-ignore - The Linear SDK types may not be fully accurate
-      queryParams.filter = {
-        state: { eq: filters.state },
-      };
+      queryParams.filter.state = { eq: filters.state };
+      hasFilter = true;
       logger?.debug(`Added state filter: ${filters.state}`);
     }
 
-    // Add team-specific projects if teamId is provided
+    // Apply team filter if provided
     if (filters.teamId) {
-      logger?.debug(`Adding team filter: ${filters.teamId}`);
-
-      try {
-        // Get the team first
-        // @ts-ignore - The Linear SDK types may not be fully accurate
-        const team = await client.team(filters.teamId);
-        if (team) {
-          // Then get projects for that team
-          // @ts-ignore - The Linear SDK types may not be fully accurate
-          const teamProjectsResponse = await team.projects(queryParams);
-          logger?.debug(
-            `Found ${teamProjectsResponse.nodes.length} projects for team ${filters.teamId}`
-          );
-
-          // Add all team projects to our collection
-          for (const project of teamProjectsResponse.nodes) {
-            allProjects.set(project.id, project);
-          }
-        } else {
-          logger?.warn(`Team with ID ${filters.teamId} not found`);
-        }
-      } catch (teamError) {
-        logger?.warn(`Error fetching team data: ${teamError.message}`);
-      }
+      queryParams.filter.team = { id: { eq: filters.teamId } };
+      hasFilter = true;
+      logger?.debug(`Added team filter in projects query: ${filters.teamId}`);
     }
+
+    // Apply name filter directly in the query if possible
+    if (filters.nameFilter && !filters.fuzzyMatch) {
+      // Only apply exact name filter here - fuzzy filtering will be done after fetching
+      queryParams.filter.name = { contains: filters.nameFilter };
+      hasFilter = true;
+      logger?.debug(`Added name filter: ${filters.nameFilter}`);
+    }
+    
+    // If no filters applied, remove empty filter object
+    if (!hasFilter) {
+      delete queryParams.filter;
+    }
+
+    // No need to separately fetch team projects since we're already filtering by team in the main query
+    // This simplifies the code and reduces API calls
 
     // Skip fetching all projects if we're just looking up by ID
     if (!filters.projectId) {
@@ -183,56 +182,53 @@ async function listProjects(client, filters = {}, { limit = 25 } = {}, logger) {
       }
     }
 
-    // Add projects referenced by issues if enabled
-    if (filters.includeThroughIssues !== false && !filters.projectId) {
-      logger?.debug('Looking for projects referenced by issues');
+    // Add projects referenced by issues if enabled and we have fewer than expected projects
+    // Only do this as a last resort if direct project queries don't yield enough results
+    if (filters.includeThroughIssues !== false && !filters.projectId && allProjects.size < limit) {
+      logger?.debug('Looking for additional projects referenced by issues');
 
       try {
         // Build issue query parameters - only fetch what we need
         const issueQueryParams = {
-          first: Math.min(50, limit * 2), // Reduce from 100 to a more reasonable number based on limit
+          first: Math.min(30, limit), // Further reduce API load - we just need a few more projects
+          orderBy: "updatedAt", // Get most recently updated issues
         };
 
         // If we're filtering by team, also filter issues by team
         if (filters.teamId) {
-          // @ts-ignore - Filter structure
           issueQueryParams.filter = { team: { id: { eq: filters.teamId } } };
         }
 
-        // @ts-ignore - The Linear SDK types may not be fully accurate
+        // Get issues and extract their projects in parallel
         const issuesResponse = await client.issues(issueQueryParams);
-        logger?.debug(
-          `Found ${issuesResponse.nodes.length} issues to scan for projects`
-        );
-
-        // Extract projects from issues - use Promise.all to parallelize the fetches
-        const projectPromises = issuesResponse.nodes
-          .filter(issue => issue.project) // Only process issues with project references
-          .map(async issue => {
-            try {
-              return await issue.project;
-            } catch (projectError) {
-              logger?.warn(
-                `Error fetching project from issue: ${projectError.message}`
-              );
-              return null;
-            }
-          });
-
-        // Wait for all project promises to resolve in parallel
-        const projects = await Promise.all(projectPromises);
         
-        // Add valid projects to our collection
-        projects
-          .filter(project => project && !allProjects.has(project.id))
-          .forEach(project => {
-            allProjects.set(project.id, project);
-            logger?.debug(
-              `Found additional project from issue: ${project.name} (${project.id})`
-            );
-          });
-      } catch (issuesError) {
-        logger?.warn(`Error fetching issues: ${issuesError.message}`);
+        if (issuesResponse.nodes.length > 0) {
+          logger?.debug(`Found ${issuesResponse.nodes.length} issues to scan for projects`);
+
+          // Extract projects from issues all at once
+          const projectPromises = issuesResponse.nodes
+            .filter(issue => issue.project) // Only process issues with project references
+            .map(async issue => {
+              try {
+                return await issue.project;
+              } catch (error) {
+                return null;
+              }
+            });
+
+          // Wait for all project promises to resolve in parallel
+          const projects = await Promise.all(projectPromises);
+          
+          // Add valid projects to our collection
+          projects
+            .filter(project => project && !allProjects.has(project.id))
+            .forEach(project => {
+              allProjects.set(project.id, project);
+              logger?.debug(`Found additional project: ${project.name}`);
+            });
+        }
+      } catch (error) {
+        logger?.warn(`Error fetching issues: ${error.message}`);
       }
     }
 
