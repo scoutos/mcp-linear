@@ -5,16 +5,12 @@ A Node.js implementation of an MCP server for Linear integration.
 ## About
 
 This MCP (Model Context Protocol) server provides a standardized interface for
-AI models to interact with Linear issue tracking functionality. It follows the
-Actions and Effects architecture pattern for clear separation of concerns and
-testability.
+AI models to interact with Linear issue tracking functionality.
 
 ### Key Features
 
 - Standard MCP protocol implementation for Linear using the official MCP SDK
 - Support for searching issues, reading details, updating, and commenting
-- Clean architecture following functional programming principles
-- Node.js implementation with the official MCP SDK
 
 ## Getting Started
 
@@ -27,10 +23,13 @@ testability.
 
 1. Clone the repository
 2. Install dependencies
+
 ```bash
 npm install
 ```
+
 3. Create a `.env` file in the root directory with your Linear API key
+
 ```
 LINEAR_API_KEY=your_linear_api_key_here
 ```
@@ -68,6 +67,7 @@ Logs will be written to the `logs/mcp-linear.log` file to avoid interfering with
 The server runs in stdio mode, which means you can connect to it with the MCP Inspector.
 
 1. Start the server in one terminal:
+
 ```bash
 npm start
 ```
@@ -77,6 +77,7 @@ npm start
 3. Select "stdio" as the transport type
 
 4. Enter the following command:
+
 ```
 node /path/to/mcp-linear/src/index.js
 ```
@@ -96,9 +97,7 @@ Add the following to your Claude Desktop configuration file (typically at
         "name": "Linear",
         "command": "node /path/to/mcp-linear/src/index.js",
         "env": {
-          "LINEAR_API_KEY": "your_linear_api_key_here",
-          "LOG_LEVEL": "DEBUG", 
-          "NODE_ENV": "development"
+          "LINEAR_API_KEY": "your_linear_api_key_here"
         }
       }
     ]
@@ -117,9 +116,7 @@ For Cursor, add the following to your settings:
       "name": "Linear",
       "command": "node /path/to/mcp-linear/src/index.js",
       "env": {
-        "LINEAR_API_KEY": "your_linear_api_key_here",
-        "LOG_LEVEL": "DEBUG", 
-        "NODE_ENV": "development"
+        "LINEAR_API_KEY": "your_linear_api_key_here"
       }
     }
   ]
@@ -141,17 +138,18 @@ To verify your setup:
 /
 ├── src/                     # Source code
 │   ├── effects/             # Effects implementation
-│   │   ├── http/            # HTTP effects for API communication
+│   │   ├── linear/          # Linear API effects
+│   │   │   └── types/       # Linear type definitions
 │   │   └── logging/         # Logging effects for safe logging with STDIO
 │   ├── tools/               # MCP tools implementation
 │   │   ├── types/           # Tool type definitions
 │   │   └── utils/           # Tool utility functions
 │   ├── utils/               # Utility modules
-│   │   ├── config/          # Configuration utilities
-│   │   └── linear/          # Linear API integration
+│   │   └── config/          # Configuration utilities
 │   └── index.js             # Main entry point
+├── docs/                    # Documentation
+│   └── llm_context/         # Documentation for LLMs
 ├── logs/                    # Log files (created at runtime)
-├── scripts/                 # Development scripts
 └── package.json             # Project configuration
 ```
 
@@ -160,31 +158,37 @@ To verify your setup:
 The MCP server exposes the following tools:
 
 - `list_tickets` - List Linear tickets with various filtering options (assignee, status, etc.)
+- `get_ticket` - Get detailed information about a specific Linear ticket by ID
+- `list_members` - List Linear team members with optional filtering by name
+- `list_projects` - List Linear projects with optional filtering by team, name, and archive status
 
 ## Troubleshooting
 
 If you're having issues with the Linear MCP server:
 
-1. **Check your Linear API key**: Make sure you've set a valid Linear API key in your .env file or environment variables. Linear API keys should start with "lin_api_".
+1. **Check your Linear API key**: Make sure you've set a valid Linear API key in your .env file or environment variables. Linear API keys should start with "lin*api*".
 
 2. **Enable debug logging**:
-   
+
    a. When starting the MCP server:
+
    ```bash
    just debug
    # or
    LOG_LEVEL=DEBUG NODE_ENV=development node src/index.js
    ```
-   
+
    b. In your client configuration (Claude Desktop, Cursor, etc.):
+
    ```json
    "env": {
      "LINEAR_API_KEY": "your_linear_api_key_here",
      "LOG_LEVEL": "DEBUG"
    }
    ```
-   
+
    c. When calling tools directly, add the debug parameter:
+
    ```json
    {
      "debug": true
@@ -200,12 +204,16 @@ If you're having issues with the Linear MCP server:
 The application follows an effects-based architecture:
 
 - **Effects**: Side-effecting operations are isolated in the `effects` directory:
-  - `http`: For network requests to the Linear API
+
+  - `linear`: Provides access to Linear API using the official Linear SDK
   - `logging`: Safe logging that doesn't interfere with STDIO transport
 
-- **Tools**: MCP tool implementations that use effects for side-effects
+- **Tools**: MCP tool implementations that use effects for side-effects:
+  - Each tool follows a consistent pattern with input validation using Zod
+  - Tools are exposed through the MCP protocol via the server
+  - Each tool can access the Linear client through the linear effect
 
-- **Utils**: Utility modules for configuration, Linear API, etc.
+- **Utils**: Utility modules for configuration and common functionality
 
 ## Contributing
 
