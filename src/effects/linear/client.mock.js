@@ -22,6 +22,8 @@ export function createMockLinearClient(options = {}) {
   const defaultNodes = [
     {
       id: 'mock-issue-1',
+      identifier: 'MAIN-123',
+      url: 'https://linear.app/scoutos/issue/MAIN-123/mock-issue-1',
       title: 'Mock Issue 1',
       description: 'This is a mock issue for testing',
       priority: 2,
@@ -43,6 +45,8 @@ export function createMockLinearClient(options = {}) {
     },
     {
       id: 'mock-issue-2',
+      identifier: 'MAIN-124',
+      url: 'https://linear.app/scoutos/issue/MAIN-124/mock-issue-2',
       title: 'Mock Issue 2',
       description: 'Another mock issue',
       priority: 1,
@@ -252,6 +256,8 @@ export function createMockLinearClient(options = {}) {
       // Create a mock issue with the input data
       const mockIssue = {
         id: 'mock-created-issue-id',
+        identifier: 'MAIN-999',
+        url: 'https://linear.app/scoutos/issue/MAIN-999/mock-created-issue',
         title: issueInput.title,
         description: issueInput.description || null,
         priority: issueInput.priority !== undefined ? issueInput.priority : 0,

@@ -54,6 +54,8 @@ export const ProjectSchema = z.object({
  */
 export const IssueSchema = z.object({
   id: z.string(),
+  identifier: z.string().optional(), // The issue identifier (e.g., "TEAM-123")
+  url: z.string().optional(), // The full URL to the issue in Linear
   title: z.string().optional(),
   description: z.string().optional(),
   status: z.string().optional(),
