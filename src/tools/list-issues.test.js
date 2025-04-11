@@ -57,10 +57,13 @@ describe('ListIssues Tool', () => {
         result.results.every(issue => issue.status === 'In Progress'),
         'All returned issues should have status "In Progress"'
       );
-      
+
       // Check for new fields
       if (result.results.length > 0) {
-        assert.ok(result.results[0].identifier, 'Issue should have an identifier');
+        assert.ok(
+          result.results[0].identifier,
+          'Issue should have an identifier'
+        );
         assert.ok(result.results[0].url, 'Issue should have a URL');
       }
     });
