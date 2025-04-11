@@ -50,6 +50,8 @@ describe('getIssue', () => {
     assert.ok(result, 'Result should exist');
     assert.strictEqual(result.id, issueId, 'Issue ID should match');
     assert.ok(result.title, 'Issue should have a title');
+    assert.ok(result.identifier, 'Issue should have an identifier');
+    assert.ok(result.url, 'Issue should have a URL');
 
     // Verify the logger recorded the expected logs
     assert.ok(

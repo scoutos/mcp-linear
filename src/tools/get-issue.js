@@ -153,6 +153,8 @@ async function getIssue(
     // Process and validate the issue data
     const processedIssue = IssueSchema.parse({
       id: issue.id,
+      identifier: issue.identifier || undefined, // Add the issue identifier (e.g. TEAM-123)
+      url: issue.url || undefined, // Add the issue URL for linking
       title: issue.title,
       description: issue.description || undefined,
       priority: issue.priority,
@@ -256,6 +258,12 @@ const handler = async (ctx, { issueId, includeComments, debug }) => {
     // Format the issue details
     responseText += `# ${issue.title || 'Untitled'}\n\n`;
     responseText += `**ID:** ${issue.id}\n`;
+    if (issue.identifier) {
+      responseText += `**Identifier:** ${issue.identifier}\n`;
+    }
+    if (issue.url) {
+      responseText += `**URL:** ${issue.url}\n`;
+    }
     responseText += `**Status:** ${issue.status || 'Unknown'}\n`;
     responseText += `**Priority:** ${priorityMap[priority] || 'Unknown'}\n`;
 
