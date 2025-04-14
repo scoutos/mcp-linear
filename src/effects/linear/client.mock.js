@@ -13,7 +13,10 @@
  * @param {Array} [options.issues.nodes] - Mock issue nodes to return from searches
  * @param {boolean} [options.throwOnIssue] - Whether to throw an error when issue is called
  * @param {boolean} [options.throwOnIssueCreate] - Whether to throw an error when issueCreate is called
+ * @param {boolean} [options.throwOnIssueUpdate] - Whether to throw an error when issue.update is called
+ * @param {boolean} [options.throwOnTeam] - Whether to throw an error when team is called
  * @param {Object} [options.issueData] - Mock issue data to return
+ * @param {Object} [options.teamData] - Mock team data to return
  * @param {string} [options.errorMessage] - Custom error message to use when throwing
  * @returns {Object} Mock Linear client that partially implements the LinearClient interface
  */
@@ -71,7 +74,40 @@ export function createMockLinearClient(options = {}) {
   // Additional options
   const throwOnIssue = options.throwOnIssue || false;
   const throwOnIssueCreate = options.throwOnIssueCreate || false;
+  const throwOnIssueUpdate = options.throwOnIssueUpdate || false;
+  const throwOnTeam = options.throwOnTeam || false;
   const mockIssueData = options.issueData || null;
+  const mockTeamData = options.teamData || null;
+
+  // Default mock workflow states
+  const defaultWorkflowStates = {
+    nodes: [
+      {
+        id: 'state-1',
+        name: 'Backlog',
+        color: '#000000',
+        description: 'Backlog items',
+        type: 'backlog',
+        position: 0,
+      },
+      {
+        id: 'state-2',
+        name: 'In Progress',
+        color: '#0000FF',
+        description: 'In progress items',
+        type: 'started',
+        position: 1,
+      },
+      {
+        id: 'state-3',
+        name: 'Done',
+        color: '#00FF00',
+        description: 'Completed items',
+        type: 'completed',
+        position: 2,
+      },
+    ],
+  };
 
   return {
     // Track calls for assertion in tests
@@ -79,6 +115,8 @@ export function createMockLinearClient(options = {}) {
       issues: [],
       issue: [],
       createIssue: [],
+      updateIssue: [],
+      team: [],
     },
 
     /**
@@ -215,6 +253,61 @@ export function createMockLinearClient(options = {}) {
               },
             ],
           });
+          
+        // Add update method to the issue
+        foundIssue.update = (updateData) => {
+          // Record the call for test assertions
+          this._calls.updateIssue.push({ issueId, updateData });
+          
+          // If configured to throw, throw an error
+          if (throwOnIssueUpdate) {
+            return Promise.reject(
+              new Error(options.errorMessage || 'Update issue failed')
+            );
+          }
+          
+          // Create updated issue with merged data
+          const updatedIssue = { ...foundIssue };
+          
+          // Apply updates
+          if (updateData.title !== undefined) {
+            updatedIssue.title = updateData.title;
+          }
+          
+          if (updateData.description !== undefined) {
+            updatedIssue.description = updateData.description;
+          }
+          
+          if (updateData.priority !== undefined) {
+            updatedIssue.priority = updateData.priority;
+          }
+          
+          if (updateData.stateId !== undefined) {
+            updatedIssue.state = Promise.resolve({
+              id: updateData.stateId,
+              name: updateData.stateId === 'state-1' ? 'Backlog' :
+                    updateData.stateId === 'state-2' ? 'In Progress' :
+                    updateData.stateId === 'state-3' ? 'Done' : 'Unknown',
+            });
+          }
+          
+          if (updateData.assigneeId !== undefined) {
+            if (updateData.assigneeId === null) {
+              updatedIssue.assignee = Promise.resolve(null);
+            } else {
+              updatedIssue.assignee = Promise.resolve({
+                id: updateData.assigneeId,
+                name: 'Updated Assignee',
+                email: 'updated@example.com',
+              });
+            }
+          }
+          
+          // Update timestamp
+          updatedIssue.updatedAt = new Date();
+          
+          return Promise.resolve(updatedIssue);
+        };
 
         return Promise.resolve(foundIssue);
       }
@@ -225,6 +318,61 @@ export function createMockLinearClient(options = {}) {
         Promise.resolve({
           nodes: [],
         });
+        
+      // Add update method to the default issue
+      defaultIssue.update = (updateData) => {
+        // Record the call for test assertions
+        this._calls.updateIssue.push({ issueId, updateData });
+        
+        // If configured to throw, throw an error
+        if (throwOnIssueUpdate) {
+          return Promise.reject(
+            new Error(options.errorMessage || 'Update issue failed')
+          );
+        }
+        
+        // Create updated issue with merged data
+        const updatedIssue = { ...defaultIssue };
+        
+        // Apply updates
+        if (updateData.title !== undefined) {
+          updatedIssue.title = updateData.title;
+        }
+        
+        if (updateData.description !== undefined) {
+          updatedIssue.description = updateData.description;
+        }
+        
+        if (updateData.priority !== undefined) {
+          updatedIssue.priority = updateData.priority;
+        }
+        
+        if (updateData.stateId !== undefined) {
+          updatedIssue.state = Promise.resolve({
+            id: updateData.stateId,
+            name: updateData.stateId === 'state-1' ? 'Backlog' :
+                  updateData.stateId === 'state-2' ? 'In Progress' :
+                  updateData.stateId === 'state-3' ? 'Done' : 'Unknown',
+          });
+        }
+        
+        if (updateData.assigneeId !== undefined) {
+          if (updateData.assigneeId === null) {
+            updatedIssue.assignee = Promise.resolve(null);
+          } else {
+            updatedIssue.assignee = Promise.resolve({
+              id: updateData.assigneeId,
+              name: 'Updated Assignee',
+              email: 'updated@example.com',
+            });
+          }
+        }
+        
+        // Update timestamp
+        updatedIssue.updatedAt = new Date();
+        
+        return Promise.resolve(updatedIssue);
+      };
 
       return Promise.resolve(defaultIssue);
     },
@@ -296,10 +444,96 @@ export function createMockLinearClient(options = {}) {
         Promise.resolve({
           nodes: [],
         });
+        
+      // Add update method to the issue
+      mockIssue.update = (updateData) => {
+        // Record the call for test assertions
+        this._calls.updateIssue.push({ issueId: mockIssue.id, updateData });
+        
+        // Create updated issue with merged data
+        const updatedIssue = { ...mockIssue };
+        
+        // Apply updates
+        if (updateData.title !== undefined) {
+          updatedIssue.title = updateData.title;
+        }
+        
+        if (updateData.description !== undefined) {
+          updatedIssue.description = updateData.description;
+        }
+        
+        if (updateData.priority !== undefined) {
+          updatedIssue.priority = updateData.priority;
+        }
+        
+        if (updateData.stateId !== undefined) {
+          updatedIssue.state = Promise.resolve({
+            id: updateData.stateId,
+            name: updateData.stateId === 'state-1' ? 'Backlog' :
+                  updateData.stateId === 'state-2' ? 'In Progress' :
+                  updateData.stateId === 'state-3' ? 'Done' : 'Unknown',
+          });
+        }
+        
+        if (updateData.assigneeId !== undefined) {
+          if (updateData.assigneeId === null) {
+            updatedIssue.assignee = Promise.resolve(null);
+          } else {
+            updatedIssue.assignee = Promise.resolve({
+              id: updateData.assigneeId,
+              name: 'Updated Assignee',
+              email: 'updated@example.com',
+            });
+          }
+        }
+        
+        // Update timestamp
+        updatedIssue.updatedAt = new Date();
+        
+        return Promise.resolve(updatedIssue);
+      };
 
       return Promise.resolve({
         issue: Promise.resolve(mockIssue),
       });
     },
+    
+    /**
+     * Mock implementation of team method
+     * 
+     * @param {string} teamId - ID of the team to retrieve
+     * @returns {Promise<Object>} Team details
+     */
+    team(teamId) {
+      // Record the call for test assertions
+      this._calls.team.push(teamId);
+      
+      // If configured to throw, throw an error
+      if (throwOnTeam) {
+        return Promise.reject(
+          new Error(options.errorMessage || 'Team not found')
+        );
+      }
+      
+      // If provided with mock data, return it
+      if (mockTeamData) {
+        return Promise.resolve(mockTeamData);
+      }
+      
+      // Create a default team
+      const mockTeam = {
+        id: teamId,
+        name: teamId === 'team-1' ? 'Engineering' : 
+              teamId === 'team-2' ? 'Product' : 
+              teamId === 'team-3' ? 'Operations' : 'Unknown Team',
+              
+        // Add states method to get workflow states
+        states: () => {
+          return Promise.resolve(defaultWorkflowStates);
+        }
+      };
+      
+      return Promise.resolve(mockTeam);
+    }
   };
 }

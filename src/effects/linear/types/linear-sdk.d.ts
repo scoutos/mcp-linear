@@ -20,6 +20,29 @@ declare module '@linear/sdk' {
       projectId?: string;
       [key: string]: any;
     }): Promise<{ issue: Promise<any> }>;
+    
+    // Team retrieval method
+    team(teamId: string): Promise<Team>;
+  }
+  
+  interface Issue {
+    // Update method for issues
+    update(data: {
+      title?: string;
+      description?: string;
+      stateId?: string;
+      priority?: number;
+      assigneeId?: string | null;
+      [key: string]: any;
+    }): Promise<any>;
+  }
+  
+  interface Team {
+    // Get workflow states method
+    states(): Promise<{ nodes: any[] }>;
+    
+    // Team name
+    name: string;
   }
 }
 // This ensures the TypeScript types are available in JavaScript files
